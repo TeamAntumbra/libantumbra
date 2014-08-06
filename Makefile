@@ -1,6 +1,6 @@
 CFLAGS := -Wall -std=c99 $(shell pkg-config libusb-1.0 --cflags)
 
-objs = device.o error.o
+objs = device.o error.o ctx.o log.o
 
 all: libantumbra.so libantumbra.a
 

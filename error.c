@@ -5,6 +5,8 @@ const char err_outofrange[] = "(error message not defined)";
 static const char *err_strings[] = {
     [AnError_SUCCESS] = "Success",
     [AnError_DISCONNECTED] = "Disconnected",
+    [AnError_MALLOCFAILED] = "Memory allocation failed",
+    [AnError_LIBUSB] = "libusb error",
 };
 
 const char *AnError_String(AnError e)
