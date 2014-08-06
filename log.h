@@ -11,4 +11,6 @@
 
 void AnLog_Log(AnCtx *ctx, const char *fmt, ...);
 
+void AnLog_SetLogFile(AnCtx *ctx, FILE *f);
+
 #endif

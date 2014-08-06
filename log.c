@@ -10,3 +10,8 @@ void AnLog_Log(AnCtx *ctx, const char *fmt, ...)
     vfprintf(ctx->logf, fmt, ap);
     va_end(ap);
 }
+
+void AnLog_SetLogFile(AnCtx *ctx, FILE *f)
+{
+    ctx->logf = f;
+}
