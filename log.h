@@ -8,7 +8,7 @@
 
 /* Log message with file/line/func context. */
 #define An_LOG(ctx, fmt, ...) AnLog_Log((ctx), ("[%s:%d:%s] " fmt "\n"), __FILE__, \
-                                        __LINE__, __func__, __VA_ARGS__)
+                                        __LINE__, __func__, ##__VA_ARGS__)
 
 /* Log message. */
 void AnLog_Log(AnCtx *ctx, const char *fmt, ...);
