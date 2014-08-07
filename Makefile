@@ -10,7 +10,7 @@ clean:
 	-rm *.so *.a *.o
 
 %.so:
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.a:
 	$(AR) rcs $@ $^
