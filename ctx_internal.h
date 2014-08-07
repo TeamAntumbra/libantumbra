@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <libusb.h>
 
+#include "device.h"
+
 struct AnCtx {
     FILE *logf;
     libusb_context *uctx;
-    libusb_device **udevs;
+
+    int ndevs;
+    AnDevice **devs;
 };

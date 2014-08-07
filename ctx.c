@@ -15,7 +15,8 @@ AnError AnCtx_Init(AnCtx **ctx)
     }
 
     newctx->logf = stderr;
-    newctx->udevs = NULL;
+    newctx->ndevs = 0;
+    newctx->devs = NULL;
 
     *ctx = newctx;
     return AnError_SUCCESS;
@@ -24,5 +25,6 @@ AnError AnCtx_Init(AnCtx **ctx)
 void AnCtx_Deinit(AnCtx *ctx)
 {
     libusb_exit(ctx->uctx);
+    free(ctx->devs);
     free(ctx);
 }
