@@ -184,3 +184,23 @@ int AnDevice__ErrorDisconnect(AnCtx *ctx, AnDevice *dev, int err, const char *lo
 
     return AnError_LIBUSB;
 }
+
+AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
+                                  const void *data)
+{
+    if (dev->state != AnDeviceState_OPEN)
+    if (sz > 16) {
+        An_LOG(ctx, "too many bytes for bulk packet (max 16): %d", sz);
+        return AnError_OUTOFRANGE;
+    }
+
+    int xout;
+    int err = An__ERRORDISCONNECT(
+        ctx, dev, libusb_bulk_transfer(dev->devh, 0x01, (unsigned char *)data,
+                                       sz, &xout, 1000)
+    );
+    if (err)
+        return err;
+
+    return AnError_SUCCESS;
+}

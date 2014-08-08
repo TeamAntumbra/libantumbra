@@ -11,6 +11,8 @@
 #define AnError_LIBUSB 3
 /* Device in inapplicable state for operation. */
 #define AnError_WRONGSTATE 4
+/* Index or size out of range. */
+#define AnError_OUTOFRANGE 5
 
 /* Error value. Zero is success, nonzero is flaming death. */
 typedef int AnError;

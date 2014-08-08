@@ -45,4 +45,8 @@ AnError AnDevice_Close(AnCtx *ctx, AnDevice *dev);
 /* Free device and associated resources. */
 void AnDevice_Free(AnDevice *dev);
 
+/* Synchronously transmit a bulk packet. */
+AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
+                                  const void *data);
+
 #endif
