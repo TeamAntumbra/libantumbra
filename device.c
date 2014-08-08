@@ -57,7 +57,8 @@ AnError AnDevice_Populate(AnCtx *ctx)
         );
         serial[sizeof serial - 1] = 0;
         if (nchr < 0) {
-            An_LOG(ctx, " libusb_get_string_descriptor_ascii: %s", libusb_strerror(nchr));
+            An_LOG(ctx, " libusb_get_string_descriptor_ascii: %s",
+                   libusb_strerror(nchr));
             libusb_close(devhnd);
             continue;
         }
