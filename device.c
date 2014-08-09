@@ -211,6 +211,7 @@ AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
     );
     if (err)
         return err;
+    An_LOG(ctx, "%d bytes sent", xout);
 
     return AnError_SUCCESS;
 }
