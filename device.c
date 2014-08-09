@@ -194,7 +194,11 @@ int AnDevice__ErrorDisconnect(AnCtx *ctx, AnDevice *dev, int err, const char *lo
 AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
                                   const void *data)
 {
-    if (dev->state != AnDeviceState_OPEN)
+    if (dev->state != AnDeviceState_OPEN) {
+        An_LOG(ctx, "not in state OPEN");
+        return AnError_WRONGSTATE;
+    }
+
     if (sz > 16) {
         An_LOG(ctx, "too many bytes for bulk packet (max 16): %d", sz);
         return AnError_OUTOFRANGE;
