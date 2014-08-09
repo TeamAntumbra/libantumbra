@@ -28,19 +28,13 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        uint8_t col[3];
         float deg = 0;
-
-        uint8_t outb[8];
-        memset(outb, 0, sizeof outb);
-
         while (1) {
-            hsv2rgb(deg, 1, 1, col, col + 1, col + 2);
+            uint8_t r, g, b;
+            hsv2rgb(deg, 1, 1, &r, &g, &b);
             deg = fmodf(deg + 1, 360);
 
-            memcpy(outb, col, sizeof col);
-            if (AnDevice_SendBulkPacket_S(ctx, dev, sizeof outb, outb) ==
-                AnError_DISCONNECTED)
+            if (AnDevice_SetRGB_S(ctx, dev, r, g, b) == AnError_DISCONNECTED)
                 return 1;
 
             struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000};
