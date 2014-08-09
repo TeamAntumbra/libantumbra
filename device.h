@@ -49,4 +49,8 @@ void AnDevice_Free(AnDevice *dev);
 AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
                                   const void *data);
 
+/* Synchronously receive a bulk packet. */
+AnError AnDevice_ReadBulkPacket_S(AnCtx *ctx, AnDevice *dev, int maxsz,
+                                  int *readsz, void *data);
+
 #endif

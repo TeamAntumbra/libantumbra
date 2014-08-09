@@ -215,3 +215,27 @@ AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
 
     return AnError_SUCCESS;
 }
+
+AnError AnDevice_ReadBulkPacket_S(AnCtx *ctx, AnDevice *dev, int trysz,
+                                  int *readsz, void *data)
+{
+    if (dev->state != AnDeviceState_OPEN) {
+        An_LOG(ctx, "not in state OPEN");
+        return AnError_WRONGSTATE;
+    }
+
+    if (trysz > 64) {
+        An_LOG(ctx, "too many bytes to read as bulk packet (max 64): %d", trysz);
+        return AnError_OUTOFRANGE;
+    }
+
+    int err = An__ERRORDISCONNECT(
+        ctx, dev, libusb_bulk_transfer(dev->devh, 0x82, (unsigned char *)data,
+                                       trysz, readsz, 1000)
+    );
+    if (err)
+        return err;
+    An_LOG(ctx, "%d bytes received", *readsz);
+
+    return AnError_SUCCESS;
+}
