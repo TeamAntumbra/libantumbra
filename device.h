@@ -45,10 +45,6 @@ AnError AnDevice_Close(AnCtx *ctx, AnDevice *dev);
 /* Free device and associated resources. */
 void AnDevice_Free(AnDevice *dev);
 
-/* Synchronously transmit a bulk packet. */
-AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
-                                  const void *data);
-
 /* Synchronously set RGB. */
 AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
                           uint8_t r, uint8_t g, uint8_t b);

@@ -191,31 +191,6 @@ int AnDevice__ErrorDisconnect(AnCtx *ctx, AnDevice *dev, int err, const char *lo
     return AnError_LIBUSB;
 }
 
-AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
-                                  const void *data)
-{
-    if (dev->state != AnDeviceState_OPEN) {
-        An_LOG(ctx, "not in state OPEN");
-        return AnError_WRONGSTATE;
-    }
-
-    if (sz > 8) {
-        An_LOG(ctx, "too many bytes to send as bulk packet (max 8): %d", sz);
-        return AnError_OUTOFRANGE;
-    }
-
-    int xout;
-    int err = An__ERRORDISCONNECT(
-        ctx, dev, libusb_bulk_transfer(dev->devh, 0x01, (unsigned char *)data,
-                                       sz, &xout, 1000)
-    );
-    if (err)
-        return err;
-    An_LOG(ctx, "%d bytes sent", xout);
-
-    return AnError_SUCCESS;
-}
-
 AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
                           uint8_t r, uint8_t g, uint8_t b)
 {
