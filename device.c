@@ -215,3 +215,26 @@ AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
 
     return AnError_SUCCESS;
 }
+
+AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
+                          uint8_t r, uint8_t g, uint8_t b)
+{
+    if (dev->state != AnDeviceState_OPEN) {
+        An_LOG(ctx, "not in state OPEN");
+        return AnError_WRONGSTATE;
+    }
+
+    uint8_t outpkt[8];
+    memset(outpkt, 0, sizeof outpkt);
+    outpkt[0] = r;
+    outpkt[1] = g;
+    outpkt[2] = b;
+
+    An_LOG(ctx, "set RGB: 0x%02x 0x%02x 0x%02x", r, g, b);
+
+    int xout;
+    return An__ERRORDISCONNECT(
+        ctx, dev, libusb_bulk_transfer(dev->devh, 0x01, (unsigned char *)outpkt,
+                                       sizeof outpkt, &xout, 1000)
+    );
+}

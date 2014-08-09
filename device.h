@@ -49,4 +49,8 @@ void AnDevice_Free(AnDevice *dev);
 AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
                                   const void *data);
 
+/* Synchronously set RGB. */
+AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
+                          uint8_t r, uint8_t g, uint8_t b);
+
 #endif
