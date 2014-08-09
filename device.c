@@ -199,8 +199,8 @@ AnError AnDevice_SendBulkPacket_S(AnCtx *ctx, AnDevice *dev, int sz,
         return AnError_WRONGSTATE;
     }
 
-    if (sz > 64) {
-        An_LOG(ctx, "too many bytes to send as bulk packet (max 64): %d", sz);
+    if (sz > 8) {
+        An_LOG(ctx, "too many bytes to send as bulk packet (max 8): %d", sz);
         return AnError_OUTOFRANGE;
     }
 
