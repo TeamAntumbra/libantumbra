@@ -135,8 +135,11 @@ AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev)
     }
 
     An_LOG(ctx, " unconfigure (set configuration -1)");
-    err = An__ERRORDISCONNECT(ctx, dev, libusb_set_configuration(dev->devh, -1));
-    if (err)
+    int invalperr;
+    err = An__ERRORDISCONNECT(ctx, dev, invalperr = libusb_set_configuration(dev->devh, -1));
+    if (invalperr == LIBUSB_ERROR_INVALID_PARAM)
+        An_LOG(ctx, " this is probably OK if using WinUSB");
+    else if (err)
         return err;
 
     An_LOG(ctx, " set configuration 1");
