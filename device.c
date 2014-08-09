@@ -134,6 +134,11 @@ AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev)
         return AnError_LIBUSB;
     }
 
+    An_LOG(ctx, " unconfigure (set configuration -1)");
+    err = An__ERRORDISCONNECT(ctx, dev, libusb_set_configuration(dev->devh, -1));
+    if (err)
+        return err;
+
     An_LOG(ctx, " set configuration 1");
     err = An__ERRORDISCONNECT(ctx, dev, libusb_set_configuration(dev->devh, 1));
     if (err)
