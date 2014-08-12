@@ -15,46 +15,58 @@ LDLIBS :=
 #     libusb.h
 #     libusb-1.0.a
 
-ifeq ($(os),win)
-	CC = i686-w64-mingw32-gcc
-	AR = i686-w64-mingw32-ar
-	CFLAGS += -Ilibusb -D'An_DLL=__cdecl __declspec(dllexport)'
-	LDLIBS += -static -Llibusb -lusb-1.0
-	SOEXT = dll
-	EXEXT = .exe
-else
-	CC = gcc
-	AR = ar
-	CFLAGS += -fPIC $(shell pkg-config libusb-1.0 --cflags) -D'An_DLL='
-	LDFLAGS += $(shell pkg-config libusb-1.0 --libs)
-	SOEXT = so
-	EXEXT =
-endif
-
 objs = device.o error.o ctx.o log.o
 
-all: libantumbra.$(SOEXT) libantumbra.a
+.PHONY: all dynamiclib staticlib testprog
+all: dynamiclib staticlib testprog
 
 .PHONY: clean
 clean:
 	-rm test *.so *.dll *.exe *.a *.o
 
-%.$(SOEXT):
+%.so %.dll:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.a:
 	$(AR) rcs $@ $^
 
-libantumbra.$(SOEXT): LDFLAGS += $(LIBUSB_LIBS) -shared
-libantumbra.$(SOEXT): $(objs)
+%.exe:
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+ifeq ($(os),win)
+
+CC = i686-w64-mingw32-gcc
+AR = i686-w64-mingw32-ar
+CFLAGS += -Ilibusb -D'An_DLL=__cdecl __declspec(dllexport)'
+
+dynamiclib: libantumbra.dll
+testprog: test.exe
+
+libantumbra.dll: LDFLAGS += -shared
+libantumbra.dll: LDLIBS += -static -Llibusb -lusb-1.0
+libantumbra.dll: libantumbra.a
+
+test.exe: LDLIBS += -lm -static -Llibusb -lusb-1.0
+test.exe: test.o hsv.o libantumbra.a
+
+else
+
+CC = gcc
+AR = ar
+CFLAGS += $(shell pkg-config libusb-1.0 --cflags) -D'An_DLL='
+
+dynamiclib: libantumbra.so
+testprog: test
+
+libantumbra.a: CFLAGS += -fPIC
+
+libantumbra.so: LDFLAGS += -shared -fPIC
+libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
+libantumbra.so: libantumbra.a
+
+test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
+test: test.o hsv.o libantumbra.a
+
+endif
 
 libantumbra.a: $(objs)
-
-test: LDFLAGS += -lm
-test: test.o hsv.o libantumbra.a
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-test.exe: LDFLAGS += -lm
-test.exe: LDLIBS := -L. -lantumbra $(LDLIBS)
-test.exe: test.o hsv.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
