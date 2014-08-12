@@ -8,9 +8,9 @@
 typedef struct AnCtx AnCtx;
 
 /* Create a new context and return its pointer via `ctx`. */
-AnError AnCtx_Init(AnCtx **ctx);
+An_DLL AnError AnCtx_Init(AnCtx **ctx);
 
 /* Free resources and destroy context. */
-void AnCtx_Deinit(AnCtx *ctx);
+An_DLL void AnCtx_Deinit(AnCtx *ctx);
 
 #endif
