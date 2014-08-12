@@ -6,14 +6,28 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#define AnLog_NONE (-1)
+#define AnLog_ERROR 0
+#define AnLog_WARN 1
+#define AnLog_INFO 2
+#define AnLog_DEBUG 3
+
+typedef int AnLogLevel;
+
 /* Log message with file/line/func context. */
-#define An_LOG(ctx, fmt, ...) AnLog_Log((ctx), ("[%s:%d:%s] " fmt "\n"), __FILE__, \
-                                        __LINE__, __func__, ##__VA_ARGS__)
+#define An_LOG(ctx, lvl, fmt, ...) AnLog_Log(       \
+        (ctx), (lvl), ("[%s:%d:%s %s] " fmt "\n"), __FILE__, __LINE__,  \
+        __func__, AnLogLevel_Sigil((lvl)), ##__VA_ARGS__)
+
 
 /* Log message. */
-void AnLog_Log(AnCtx *ctx, const char *fmt, ...);
+void AnLog_Log(AnCtx *ctx, AnLogLevel lvl, const char *fmt, ...);
 
-/* Set output file for logging, or NULL to disable. */
-void AnLog_SetLogFile(AnCtx *ctx, FILE *f);
+/* Set minimum level and output file for logging, or NULL to disable. */
+void AnLog_SetLogging(AnCtx *ctx, AnLogLevel lvl, FILE *f);
+
+/* Return a sigil (DD/II/WW/EE) for a given error level, or ?? for unknown
+   level. */
+const char *AnLogLevel_Sigil(AnLogLevel lvl);
 
 #endif

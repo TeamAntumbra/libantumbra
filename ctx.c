@@ -14,7 +14,8 @@ AnError AnCtx_Init(AnCtx **ctx)
         return AnError_LIBUSB;
     }
 
-    newctx->logf = stderr;
+    newctx->loglevel = AnLog_NONE;
+    newctx->logf = NULL;
     newctx->ndevs = 0;
     newctx->devs = NULL;
 

@@ -7,7 +7,7 @@
 
 #include "antumbra.h"
 
-#include "hsv.c"
+#include "hsv.h"
 
 int main(int argc, char **argv)
 {
@@ -16,13 +16,13 @@ int main(int argc, char **argv)
         fputs("ctx init failed\n", stderr);
         return 1;
     }
+    AnLog_SetLogging(ctx, AnLog_INFO, stderr);
     AnDevice_Populate(ctx);
 
     for (int i = 0; i < AnDevice_GetCount(ctx); ++i) {
         const char *ser;
         AnDevice *dev = AnDevice_Get(ctx, i);
         AnDevice_Info(dev, NULL, NULL, &ser);
-        puts(ser);
         if (AnDevice_Open(ctx, dev)) {
             fputs("device open failed\n", stderr);
             return 1;
