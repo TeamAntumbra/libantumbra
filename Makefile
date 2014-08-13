@@ -33,7 +33,7 @@ clean:
 %.exe:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-ifeq ($(os),win)
+ifeq ($(os),win32)
 
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
@@ -49,7 +49,7 @@ libantumbra.dll: libantumbra.a
 test.exe: LDLIBS += -lm -static -Llibusb -lusb-1.0
 test.exe: test.o hsv.o libantumbra.a
 
-else
+else ifeq ($(os),linux)
 
 CC = gcc
 AR = ar
@@ -66,6 +66,10 @@ libantumbra.so: libantumbra.a
 
 test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
 test: test.o hsv.o libantumbra.a
+
+else
+
+$(error Specify architecture by os=<arch> on command line. <arch> is one of: win32, linux)
 
 endif
 
