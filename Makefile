@@ -60,6 +60,7 @@ testprog: test
 
 libantumbra.a: CFLAGS += -fPIC
 
+libantumbra.so: CFLAGS += -fPIC
 libantumbra.so: LDFLAGS += -shared -fPIC
 libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.so: $(objs)
