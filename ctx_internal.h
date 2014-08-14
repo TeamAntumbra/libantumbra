@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <libusb.h>
 
-#include "device.h"
-#include "log.h"
+#include "antumbra.h"
 
 struct AnCtx {
     AnLogLevel loglevel;

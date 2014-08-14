@@ -1,7 +1,6 @@
-#include "device.h"
+#include "antumbra.h"
 #include "device_internal.h"
 #include "ctx_internal.h"
-#include "log.h"
 
 #include <stdlib.h>
 #include <string.h>

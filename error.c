@@ -1,4 +1,4 @@
-#include "error.h"
+#include "antumbra.h"
 
 const char err_outofrange[] = "(error message not defined)";
 

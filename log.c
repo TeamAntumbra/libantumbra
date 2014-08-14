@@ -1,5 +1,7 @@
-#include "log.h"
+#include "antumbra.h"
 #include "ctx_internal.h"
+
+#include <stdarg.h>
 
 static const char *const sigils[] = {
     [AnLog_ERROR] = "E",
