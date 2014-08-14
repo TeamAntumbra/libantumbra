@@ -44,7 +44,7 @@ testprog: test.exe
 
 libantumbra.dll: LDFLAGS += -shared
 libantumbra.dll: LDLIBS += -static -Llibusb -lusb-1.0
-libantumbra.dll: libantumbra.a
+libantumbra.dll: $(objs)
 
 test.exe: LDLIBS += -lm -static -Llibusb -lusb-1.0
 test.exe: test.o hsv.o libantumbra.a
@@ -62,7 +62,7 @@ libantumbra.a: CFLAGS += -fPIC
 
 libantumbra.so: LDFLAGS += -shared -fPIC
 libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
-libantumbra.so: libantumbra.a
+libantumbra.so: $(objs)
 
 test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
 test: test.o hsv.o libantumbra.a
@@ -78,7 +78,7 @@ testprog: test
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
 libantumbra.dylib: LDLIBS += -static $(shell pkg-config libusb-1.0 --libs)
-libantumbra.dylib: libantumbra.a
+libantumbra.dylib: $(objs)
 
 test: LDLIBS += -lm -L. -lantumbra
 test: test.o hsv.o
