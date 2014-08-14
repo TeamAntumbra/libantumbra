@@ -24,7 +24,7 @@ all: dynamiclib staticlib testprog
 clean:
 	-rm test *.so *.dll *.exe *.a *.o
 
-%.so %.dll:
+%.so %.dll %.dylib:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.a:
@@ -66,6 +66,22 @@ libantumbra.so: libantumbra.a
 
 test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
 test: test.o hsv.o libantumbra.a
+
+else ifeq ($(os),darwin)
+
+CC = gcc
+AR = ar
+CFLAGS += $(shell pkg-config libusb-1.0 --cflags) -D'An_DLL='
+
+dynamiclib: libantumbra.dylib
+testprog: test
+
+libantumbra.dylib: LDFLAGS += -dynamiclib
+libantumbra.dylib: LDLIBS += -static $(shell pkg-config libusb-1.0 --libs)
+libantumbra.dylib: libantumbra.a
+
+test: LDLIBS += -lm -L. -lantumbra
+test: test.o hsv.o
 
 else
 
