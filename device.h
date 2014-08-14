@@ -11,6 +11,8 @@
 #include "ctx.h"
 #include "error.h"
 
+#include <stdint.h>
+
 typedef struct AnDevice AnDevice;
 
 /* Populate context with all available Antumbra devices. Calling

@@ -1,8 +1,6 @@
 #ifndef AN_CTX_H
 #define AN_CTX_H
 
-#include <libusb.h>
-
 #include "error.h"
 
 typedef struct AnCtx AnCtx;
