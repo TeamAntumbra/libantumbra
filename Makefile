@@ -22,7 +22,7 @@ all: dynamiclib staticlib testprog
 
 .PHONY: clean
 clean:
-	-rm test *.so *.dll *.exe *.a *.o
+	-rm test *.so *.dylib *.dll *.exe *.a *.o
 
 %.so %.dll %.dylib:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
