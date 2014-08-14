@@ -37,7 +37,7 @@ ifeq ($(os),win32)
 
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
-CFLAGS += -Ilibusb -D'An_DLL=__cdecl __declspec(dllexport)'
+CFLAGS += -Ilibusb -DANTUMBRA_WINDOWS
 
 dynamiclib: libantumbra.dll
 testprog: test.exe
@@ -53,7 +53,7 @@ else ifeq ($(os),linux)
 
 CC = gcc
 AR = ar
-CFLAGS += $(shell pkg-config libusb-1.0 --cflags) -D'An_DLL='
+CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
 dynamiclib: libantumbra.so
 testprog: test
@@ -71,7 +71,7 @@ else ifeq ($(os),darwin)
 
 CC = gcc
 AR = ar
-CFLAGS += $(shell pkg-config libusb-1.0 --cflags) -D'An_DLL='
+CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
 dynamiclib: libantumbra.dylib
 testprog: test
