@@ -89,4 +89,5 @@ $(error Specify architecture by os=<arch> on command line. <arch> is one of: win
 
 endif
 
+staticlib: libantumbra.a
 libantumbra.a: $(objs)
