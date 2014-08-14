@@ -77,7 +77,7 @@ dynamiclib: libantumbra.dylib
 testprog: test
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
-libantumbra.dylib: LDLIBS += -static $(shell pkg-config libusb-1.0 --libs)
+libantumbra.dylib: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.dylib: $(objs)
 
 test: LDLIBS += -lm -L. -lantumbra
