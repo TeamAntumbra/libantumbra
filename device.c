@@ -138,9 +138,7 @@ AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev)
     int invalperr;
     err = An__ERRORDISCONNECT(ctx, dev, invalperr = libusb_set_configuration(dev->devh, -1));
     if (invalperr == LIBUSB_ERROR_INVALID_PARAM)
-        An_LOG(ctx, AnLog_INFO, " this is probably OK if using WinUSB");
-    else if (err)
-        return err;
+        An_LOG(ctx, AnLog_INFO, " this is probably OK");
 
     An_LOG(ctx, AnLog_INFO, " set configuration 1");
     err = An__ERRORDISCONNECT(ctx, dev, libusb_set_configuration(dev->devh, 1));
