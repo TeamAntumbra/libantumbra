@@ -11,14 +11,11 @@ all: dynamiclib staticlib testprog
 clean:
 	-rm test *.so *.dylib *.dll *.exe *.a *.o
 
-%.so %.dll %.dylib:
+%.so %.dll %.dylib %.exe:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.a:
 	$(AR) rcs $@ $^
-
-%.exe:
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 ifeq ($(os),win32)
 
