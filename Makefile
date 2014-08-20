@@ -56,7 +56,7 @@ else ifeq ($(os),darwin)
 
 CC = gcc
 AR = ar
-CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
+CFLAGS += -Ilibusb
 
 dynamiclib: libantumbra.dylib
 testprog: test
