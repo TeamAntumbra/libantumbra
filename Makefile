@@ -64,12 +64,27 @@ CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 dynamiclib: libantumbra.dylib
 testprog: test
 
-libantumbra.dylib: LDFLAGS += -dynamiclib
-libantumbra.dylib: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
+libantumbra.dylib: LDFLAGS += -dynamiclib -install_name @rpath/libantumbra.dylib -rpath @loader_path/
+libantumbra.dylib: LDLIBS += -Llibusb -lusb-1.0
 libantumbra.dylib: $(objs)
 
-test: LDLIBS += -lm -L. -lantumbra
+test: LDLIBS += -lm -L. -lantumbra -rpath @loader_path/
 test: test.o hsv.o
+
+all: libantumbra.framework libantumbra.framework.zip
+clean: cleanfr
+libantumbra.framework: libantumbra.dylib
+	mkdir $@ $@/Headers $@/Resources
+	cp libantumbra.dylib $@/libantumbra
+	install_name_tool -id @rpath/libantumbra $@/libantumbra
+	cp libusb/libusb-1.0.dylib $@/libusb-1.0.dylib
+	cp antumbra.h $@/Headers/libantumbra.h
+	cp Info.plist $@/Resources/Info.plist
+libantumbra.framework.zip: libantumbra.framework
+	zip -r $@ $<
+.PHONY: cleanfr
+cleanfr:
+	-rm -r libantumbra.framework libantumbra.framework.zip
 
 else
 
