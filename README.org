@@ -62,8 +62,7 @@ additional resources. But this is all we need for libantumbra.
 On Darwin, =libantumbra.framework= is implied by the =all= target. libusb is
 included in the framework.
 
-=libantumbra.framework= assumes it's located in =/Library/Frameworks/=. If it
-isn't (for example, if you're embedding it in your application), you will need
-to either: change the install name of =libantumbra.framework/libantumbra= before
-linking against it; or change the dependency reference in your binary after
-building.
+=libantumbra.framework= assumes it's embedded in your application in the usual
+=Frameworks/= bundle subdir. If it isn't, you must change either the install
+name of =libantumbra.framework/libantumbra= or your binary's dependency
+reference.

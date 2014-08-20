@@ -108,7 +108,7 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	cp libantumbra.dylib $@/libantumbra
 	install_name_tool \
 		-change libusb-DUMMY-NAME @loader_path/libusb.dylib \
-		-id /Library/Frameworks/libantumbra.framework/libantumbra \
+		-id @loader_path/../Frameworks/libantumbra.framework/libantumbra \
 		$@/libantumbra
 
 	cp libusb/libusb-special.dylib $@/libusb.dylib
