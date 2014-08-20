@@ -4,12 +4,14 @@ LDLIBS :=
 
 objs = device.o error.o ctx.o log.o
 
+rm_files = *.a *.o
+
 .PHONY: all dynamiclib staticlib testprog
 all: dynamiclib staticlib testprog
 
 .PHONY: clean
 clean:
-	-rm test *.so *.dylib *.dll *.exe *.a *.o
+	-rm -r $(rm_files)
 
 %.so %.dll %.dylib %.exe:
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -22,6 +24,8 @@ ifeq ($(os),win32)
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
 CFLAGS += -Ilibusb -DANTUMBRA_WINDOWS
+
+rm_files += *.exe *.dll
 
 dynamiclib: libantumbra.dll
 testprog: test.exe
@@ -38,6 +42,8 @@ else ifeq ($(os),linux)
 CC = gcc
 AR = ar
 CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
+
+rm_files += test *.so
 
 dynamiclib: libantumbra.so
 testprog: test
@@ -57,6 +63,8 @@ else ifeq ($(os),darwin)
 CC = gcc
 AR = ar
 CFLAGS += -Ilibusb
+
+rm_files += test *.dylib *.framework *.zip libusb/libusb-special.dylib
 
 dynamiclib: libantumbra.dylib
 testprog: test
@@ -85,7 +93,6 @@ test: LDLIBS += -lm -lusb-1.0
 test: test.o hsv.o libantumbra.a
 
 all: libantumbra.framework libantumbra.framework.zip
-clean: cleanfr
 libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	mkdir $@ $@/Headers $@/Resources
 
@@ -105,10 +112,6 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	cp Info.plist $@/Resources/Info.plist
 libantumbra.framework.zip: libantumbra.framework
 	zip -r $@ $<
-.PHONY: cleanfr
-cleanfr:
-	-rm libusb/libusb-special.dylib
-	-rm -r libantumbra.framework libantumbra.framework.zip
 
 else
 
