@@ -47,13 +47,13 @@ runtime-generated list of directories.
 : $ install_name_tool -id @rpath/libusb-1.0.dylib libusb/libusb-1.0.dylib
 
 Once built, =libantumbra.dylib= will now reference libusb by relative path
-instead of absolute path. For this to work, it must also contain an LC_RPATH
+instead of absolute path. For this to work, it must also contain an =LC_RPATH=
 instruction to =dyld= that pushes the directory containing =libusb-1.0.dylib=
 onto the search path list. If the magic prefix =@loader_path/= (which resolves
-to the directory of the binary that contains the LC_RPATH instruction) is used,
-then =dyld= will look for =libusb-1.0.dylib= in the directory that contains
-=libantumbra.dylib=, as well as any other path added via LC_RPATH in any other
-library. The Makefile already sets up the paths.
+to the directory of the binary that contains the =LC_RPATH= instruction) is
+used, then =dyld= will look for =libusb-1.0.dylib= in the directory that
+contains =libantumbra.dylib=, as well as any other path added via =LC_RPATH= in
+any other library. The Makefile already sets up the paths.
 
 *** libantumbra.framework
 
