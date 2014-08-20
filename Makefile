@@ -2,19 +2,6 @@ CFLAGS := $(addcflags) -Wall -std=gnu99
 LDFLAGS :=
 LDLIBS :=
 
-# Building for Windows requires libusb static library and header to be present
-# under libusb/ in the source tree. Given the libusb 1.0.19 Windows binary
-# distribution (libusb-1.0.19.7z), which looks like this...
-#
-#     include/libusb-1.0/libusb.h
-#     MinGW32/static/libusb-1.0.a
-#     [other things we don't care about]
-#
-# ...the libusb/ directory here must look like this:
-#
-#     libusb.h
-#     libusb-1.0.a
-
 objs = device.o error.o ctx.o log.o
 
 .PHONY: all dynamiclib staticlib testprog
