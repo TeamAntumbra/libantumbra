@@ -13,9 +13,6 @@ all: libantumbra.a
 clean:
 	-rm -r $(rm_files)
 
-%.so %.dll %.dylib %.exe:
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
 %.a:
 	$(AR) rcs $@ $^
 
@@ -23,9 +20,13 @@ ifeq ($(os),win32)
 
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
+LD = i686-w64-mingw32-ld
 CFLAGS += -Ilibusb -DANTUMBRA_WINDOWS
 
 rm_files += *.exe *.dll
+
+%.dll %.exe:
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 all: libantumbra.dll test.exe
 
@@ -40,9 +41,15 @@ else ifeq ($(os),linux)
 
 CC = gcc
 AR = ar
+LD = gcc
 CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
 rm_files += test *.so
+
+%.dylib:
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+test:
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 all: libantumbra.so test
 
@@ -60,9 +67,15 @@ else ifeq ($(os),darwin)
 
 CC = gcc
 AR = ar
+LD = gcc
 CFLAGS += -Ilibusb
 
 rm_files += test *.dylib *.framework *.zip libusb/libusb-special.dylib
+
+%.dylib:
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+test:
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 all: libantumbra.dylib test libantumbra.framework libantumbra.framework.zip
 
