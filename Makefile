@@ -61,26 +61,53 @@ CFLAGS += -Ilibusb
 dynamiclib: libantumbra.dylib
 testprog: test
 
-libantumbra.dylib: LDFLAGS += -dynamiclib -install_name @rpath/libantumbra.dylib -rpath @loader_path/
-libantumbra.dylib: LDLIBS += -Llibusb -lusb-1.0
-libantumbra.dylib: $(objs)
+libantumbra.dylib: LDFLAGS += -dynamiclib
+libantumbra.dylib: LDLIBS += -Llibusb -lusb
+libantumbra.dylib: $(objs) libusb/libusb.dylib
+	$(CC) $(LDFLAGS) -o $@ $(objs) $(LDLIBS)
 
-test: LDLIBS += -lm -L. -lantumbra -rpath @loader_path/
-test: test.o hsv.o
+# Standard libusb from external source (Homebrew, ...). This copy is not
+# modified, but it must be present so that a modified version can be created. A
+# symlink is acceptable.
+libusb/libusb.dylib:
+	@>&2 echo "$@ must be added manually! See README."
+	@exit 1
+
+# libusb with modified install name. The standard libusb could potentially have
+# any install name, which would make changing libantumbra.dylib's libusb
+# dependency path difficult.
+libusb/libusb-special.dylib: libusb/libusb.dylib
+	cp $< $@
+	chmod u+w $@
+	install_name_tool -id libusb-DUMMY-NAME $@
+
+test: LDLIBS += -lm -lusb-1.0
+test: test.o hsv.o libantumbra.a
 
 all: libantumbra.framework libantumbra.framework.zip
 clean: cleanfr
-libantumbra.framework: libantumbra.dylib
+libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	mkdir $@ $@/Headers $@/Resources
+
 	cp libantumbra.dylib $@/libantumbra
-	install_name_tool -id @rpath/libantumbra $@/libantumbra
-	cp libusb/libusb-1.0.dylib $@/libusb-1.0.dylib
+	install_name_tool \
+		-change libusb-DUMMY-NAME @loader_path/libusb.dylib \
+		-id /Library/Frameworks/libantumbra.framework/libantumbra \
+		$@/libantumbra
+
+	cp libusb/libusb-special.dylib $@/libusb.dylib
+# The install name doesn't actually matter unless someone tries to build against
+# this, but it's best not to leave dummy names lying around. Someone might step
+# on them.
+	install_name_tool -id @loader_path/libusb.dylib $@/libusb.dylib
+
 	cp antumbra.h $@/Headers/libantumbra.h
 	cp Info.plist $@/Resources/Info.plist
 libantumbra.framework.zip: libantumbra.framework
 	zip -r $@ $<
 .PHONY: cleanfr
 cleanfr:
+	-rm libusb/libusb-special.dylib
 	-rm -r libantumbra.framework libantumbra.framework.zip
 
 else
