@@ -14,3 +14,62 @@ Windows binary distribution (libusb-1.0.19.7z), which looks like this...
 
     libusb.h
     libusb-1.0.a
+
+** Darwin
+
+libantumbra can be linked against either the system libusb (such as might be
+installed with MacPorts, Homebrew, etc) or a custom copy. Only the latter
+approach is supported as it is the most portable.
+
+*** Preparing libusb
+
+Place libusb library and headers in =libusb/= (this example uses a default
+Homebrew install):
+
+: $ mkdir libusb
+: $ cp /usr/local/lib/libusb-1.0.0.dylib libusb/libusb-1.0.dylib
+: $ cp /usr/local/include/libusb-1.0/libusb.h libusb/libusb.h
+
+=libusb-1.0.dylib= must be modified so that the dynamic linker will be able to
+find it at runtime. Dynamic linking is unusual on Darwin in that the target
+library specifies its own path ("install name"), which is then stored at build
+time in the binary that uses it. Since we cannot know ahead of time where
+libantumbra and libusb will be located, a relative install name must be used.
+=dyld= offers some magic prefixes for this purpose. The =@rpath/= mechanism is
+most flexible and allows =libusb-1.0.dylib= to be located in any of a
+runtime-generated list of directories.
+
+: $ chmod u+w libusb/libusb-1.0.dylib # if necessary
+: $ install_name_tool -id @rpath/libusb-1.0.dylib libusb/libusb-1.0.dylib
+
+Once built, =libantumbra.dylib= will now reference libusb by relative path
+instead of absolute path. For this to work, it must also contain an LC_RPATH
+instruction to =dyld= that pushes the directory containing =libusb-1.0.dylib=
+onto the search path list. If the magic prefix =@loader_path/= (which resolves
+to the directory of the binary that contains the LC_RPATH instruction) is used,
+then =dyld= will look for =libusb-1.0.dylib= in the directory that contains
+=libantumbra.dylib=, as well as any other path added via LC_RPATH in any other
+library. The Makefile already sets up the paths.
+
+*** libantumbra.framework
+
+Darwin has the concept of "frameworks". A framework bundles library headers and
+binaries together into a single convenient unit. These may be linked against by
+passing =-framework SomeFrameworkName= to =ld(1)= or adding them to an Xcode
+project.
+
+The basic structure of a framework, named =SomeFrameworkName= in this example,
+is thus:
+
+: SomeFrameworkName.framework/  # (appears as a single file in Finder)
+:   SomeFrameworkName           # dynamic library without .dylib extension
+:   Headers/
+:     ...
+:   Resources/
+:     Info.plist
+
+Most frameworks are more complicated and may include multiple versions or
+additional resources. But this is all we need for libantumbra.
+
+On Darwin, =libantumbra.framework= is implied by the =all= target. libusb is
+included in the framework, which is why the prior linker magic was necessary.
