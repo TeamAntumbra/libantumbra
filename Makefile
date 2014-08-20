@@ -6,8 +6,8 @@ objs = device.o error.o ctx.o log.o
 
 rm_files = *.a *.o
 
-.PHONY: all dynamiclib staticlib testprog
-all: dynamiclib staticlib testprog
+.PHONY: all
+all: libantumbra.a
 
 .PHONY: clean
 clean:
@@ -27,8 +27,7 @@ CFLAGS += -Ilibusb -DANTUMBRA_WINDOWS
 
 rm_files += *.exe *.dll
 
-dynamiclib: libantumbra.dll
-testprog: test.exe
+all: libantumbra.dll test.exe
 
 libantumbra.dll: LDFLAGS += -shared
 libantumbra.dll: LDLIBS += -static -Llibusb -lusb-1.0
@@ -45,8 +44,7 @@ CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
 rm_files += test *.so
 
-dynamiclib: libantumbra.so
-testprog: test
+all: libantumbra.so test
 
 libantumbra.a: CFLAGS += -fPIC
 
@@ -66,8 +64,7 @@ CFLAGS += -Ilibusb
 
 rm_files += test *.dylib *.framework *.zip libusb/libusb-special.dylib
 
-dynamiclib: libantumbra.dylib
-testprog: test
+all: libantumbra.dylib test libantumbra.framework libantumbra.framework.zip
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
 libantumbra.dylib: LDLIBS += -Llibusb -lusb
@@ -92,7 +89,6 @@ libusb/libusb-special.dylib: libusb/libusb.dylib
 test: LDLIBS += -lm -lusb-1.0
 test: test.o hsv.o libantumbra.a
 
-all: libantumbra.framework libantumbra.framework.zip
 libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	mkdir $@ $@/Headers $@/Resources
 
@@ -119,5 +115,4 @@ $(error Specify platform by os=... on command line. Acceptable values are: win32
 
 endif
 
-staticlib: libantumbra.a
 libantumbra.a: $(objs)
