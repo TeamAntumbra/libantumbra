@@ -88,7 +88,7 @@ cleanfr:
 
 else
 
-$(error Specify architecture by os=<arch> on command line. <arch> is one of: win32, linux)
+$(error Specify architecture by os=<arch> on command line. <arch> is one of: win32, linux, darwin)
 
 endif
 
