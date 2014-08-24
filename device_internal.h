@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <libusb.h>
 
+#include "libantumbra.h"
+
 struct AnDevice {
     uint16_t vid;
     uint16_t pid;

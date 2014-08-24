@@ -1,4 +1,4 @@
-#include "antumbra.h"
+#include "libantumbra.h"
 #include "device_internal.h"
 #include "ctx_internal.h"
 

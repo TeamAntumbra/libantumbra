@@ -1,4 +1,4 @@
-#include "antumbra.h"
+#include "libantumbra.h"
 
 const char err_outofrange[] = "(error message not defined)";
 

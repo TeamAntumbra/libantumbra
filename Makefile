@@ -117,7 +117,7 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 # on them.
 	install_name_tool -id @loader_path/libusb.dylib $@/libusb.dylib
 
-	cp antumbra.h $@/Headers/libantumbra.h
+	cp libantumbra.h $@/Headers/libantumbra.h
 	cp Info.plist $@/Resources/Info.plist
 libantumbra.framework.zip: libantumbra.framework
 	zip -r $@ $<

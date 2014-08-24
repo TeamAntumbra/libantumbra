@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "antumbra.h"
+#include "libantumbra.h"
 
 #include "hsv.h"
 
