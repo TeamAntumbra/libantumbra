@@ -82,8 +82,8 @@ test:
 all: libantumbra.dylib test libantumbra.framework libantumbra.framework.zip
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
-libantumbra.dylib: LDLIBS += -Llibusb -lusb
-libantumbra.dylib: $(objs) libusb/libusb.dylib
+libantumbra.dylib: LDLIBS += -Llibusb -lusb-special
+libantumbra.dylib: $(objs) libusb/libusb-special.dylib
 	$(CC) $(LDFLAGS) -o $@ $(objs) $(LDLIBS)
 
 # Standard libusb from external source (Homebrew, ...). This copy is not
