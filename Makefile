@@ -16,6 +16,8 @@ clean:
 %.a:
 	$(AR) rcs $@ $^
 
+libantumbra.a: $(objs)
+
 ifeq ($(os),win32)
 
 CC = i686-w64-mingw32-gcc
@@ -30,12 +32,12 @@ rm_files += *.exe *.dll
 
 all: libantumbra.dll test.exe
 
-libantumbra.dll: LDFLAGS += -shared
+libantumbra.dll: LDFLAGS += -shared -Wl,--out-implib=$@.a
 libantumbra.dll: LDLIBS += -Llibusb -lusb-1.0
 libantumbra.dll: $(objs)
 
-test.exe: LDLIBS += -lm -Llibusb -lusb-1.0
-test.exe: test.o hsv.o libantumbra.a
+test.exe: LDLIBS += -lm -L. -lantumbra
+test.exe: test.o hsv.o
 
 else ifeq ($(os),linux)
 
@@ -127,5 +129,3 @@ else
 $(error Specify platform by os=... on command line. Acceptable values are: win32, linux, darwin)
 
 endif
-
-libantumbra.a: $(objs)
