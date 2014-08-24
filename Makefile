@@ -20,7 +20,7 @@ ifeq ($(os),win32)
 
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
-LD = i686-w64-mingw32-ld
+LD = i686-w64-mingw32-gcc
 CFLAGS += -Ilibusb -DANTUMBRA_WINDOWS
 
 rm_files += *.exe *.dll
