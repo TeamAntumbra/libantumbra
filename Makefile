@@ -31,10 +31,10 @@ rm_files += *.exe *.dll
 all: libantumbra.dll test.exe
 
 libantumbra.dll: LDFLAGS += -shared
-libantumbra.dll: LDLIBS += -static -Llibusb -lusb-1.0
+libantumbra.dll: LDLIBS += -Llibusb -lusb-1.0
 libantumbra.dll: $(objs)
 
-test.exe: LDLIBS += -lm -static -Llibusb -lusb-1.0
+test.exe: LDLIBS += -lm -Llibusb -lusb-1.0
 test.exe: test.o hsv.o libantumbra.a
 
 else ifeq ($(os),linux)
