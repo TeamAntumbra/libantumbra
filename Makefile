@@ -48,7 +48,7 @@ CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
 rm_files += test *.so
 
-%.dylib:
+%.so:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 test:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
