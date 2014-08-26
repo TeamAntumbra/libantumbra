@@ -47,6 +47,8 @@ An_DLL void AnCtx_Deinit(AnCtx *ctx);
 typedef struct AnDeviceInfo AnDeviceInfo;
 typedef struct AnDevice AnDevice;
 
+An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout);
+
 An_DLL void AnDevice_Close(AnCtx *ctx, AnDevice *dev);
 
 /* Callback function pointer type for hotplug events.
