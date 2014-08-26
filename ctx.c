@@ -25,8 +25,6 @@ AnError AnCtx_Init(AnCtx **ctx)
 
 void AnCtx_Deinit(AnCtx *ctx)
 {
-    libusb_exit(ctx->uctx);
-
     AnCtxDevList *cur = ctx->opendevs;
     while (cur) {
         AnCtxDevList *next = cur->next;
@@ -35,5 +33,6 @@ void AnCtx_Deinit(AnCtx *ctx)
         cur = next;
     }
 
+    libusb_exit(ctx->uctx);
     free(ctx);
 }
