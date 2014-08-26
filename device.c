@@ -1,6 +1,5 @@
 #include "libantumbra.h"
-#include "device_internal.h"
-#include "ctx_internal.h"
+#include "internal.h"
 
 #include <stdlib.h>
 #include <string.h>

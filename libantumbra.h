@@ -1,5 +1,5 @@
-#ifndef AN_ANTUMBRA_H
-#define AN_ANTUMBRA_H
+#ifndef AN_LIBANTUMBRA_H
+#define AN_LIBANTUMBRA_H
 
 #include <stdio.h>
 #include <stdint.h>

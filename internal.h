@@ -1,9 +1,25 @@
+#ifndef AN_INTERNAL_H
+#define AN_INTERNAL_H
+
+#include <stdio.h>
 #include <stdint.h>
 #include <libusb.h>
 
 #include "libantumbra.h"
 
+struct AnCtx {
+    AnLogLevel loglevel;
+    FILE *logf;
+    libusb_context *uctx;
+
+    int ndevs;
+    AnDevice **devs;
+};
+
 struct AnDevice {
+    uint8_t bus;
+    uint8_t addr;
+
     uint16_t vid;
     uint16_t pid;
     char serial[33];
@@ -23,3 +39,5 @@ struct AnDevice {
    set device state to DEAD and free libusb resources. Return either
    AnError_DISCONNECTED or AnError_LIBUSB as appropriate. */
 int AnDevice__ErrorDisconnect(AnCtx *ctx, AnDevice *dev, int err, const char *logexpr);
+
+#endif

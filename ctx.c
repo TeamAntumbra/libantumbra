@@ -1,5 +1,5 @@
 #include "libantumbra.h"
-#include "ctx_internal.h"
+#include "internal.h"
 
 #include <stdlib.h>
 
