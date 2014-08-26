@@ -55,6 +55,7 @@ void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
                 prev->next = cur->next;
             else
                 ctx->opendevs = cur->next;
+            free(cur);
             return;
         }
         prev = cur;
