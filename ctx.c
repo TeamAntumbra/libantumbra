@@ -30,7 +30,7 @@ void AnCtx_Deinit(AnCtx *ctx)
     AnCtxDevList *cur = ctx->opendevs;
     while (cur) {
         AnCtxDevList *next = cur->next;
-        AnDevice_InternalClose(cur->dev);
+        AnDevice_InternalClose(ctx, cur->dev);
         free(cur);
         cur = next;
     }

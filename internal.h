@@ -36,6 +36,6 @@ struct AnDevice {
     libusb_device_handle *udevh;
 };
 
-void AnDevice_InternalClose(AnDevice *dev);
+void AnDevice_InternalClose(AnCtx *ctx, AnDevice *dev);
 
 #endif
