@@ -10,14 +10,14 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
 {
     An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);
 
-    AnCtxDevList *newnode = malloc(sizeof newnode);
+    AnCtxDevList *newnode = malloc(sizeof *newnode);
     if (!newnode) {
         An_LOG(ctx, AnLog_ERROR, "malloc AnCtxDevList failed: %s",
                strerror(errno));
         return AnError_MALLOCFAILED;
     }
 
-    AnDevice *dev = malloc(sizeof dev);
+    AnDevice *dev = malloc(sizeof *dev);
     if (!dev) {
         An_LOG(ctx, AnLog_ERROR, "malloc AnDevice failed: %s", strerror(errno));
         free(newnode);
