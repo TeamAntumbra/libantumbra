@@ -39,6 +39,7 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
     newnode->dev = dev;
     newnode->next = ctx->opendevs;
     ctx->opendevs = newnode;
+    *devout = dev;
     return AnError_SUCCESS;
 }
 
