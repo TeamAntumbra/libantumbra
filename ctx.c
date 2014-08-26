@@ -16,8 +16,8 @@ AnError AnCtx_Init(AnCtx **ctx)
 
     newctx->loglevel = AnLog_NONE;
     newctx->logf = NULL;
-    newctx->ndevs = 0;
-    newctx->devs = NULL;
+    newctx->plugfn = NULL;
+    newctx->opendevs = NULL;
 
     *ctx = newctx;
     return AnError_SUCCESS;
@@ -26,6 +26,14 @@ AnError AnCtx_Init(AnCtx **ctx)
 void AnCtx_Deinit(AnCtx *ctx)
 {
     libusb_exit(ctx->uctx);
-    free(ctx->devs);
+
+    AnCtxDevList *cur = ctx->opendevs;
+    while (cur) {
+        AnCtxDevList *next = cur->next;
+        AnDevice_InternalClose(cur->dev);
+        free(cur);
+        cur = next;
+    }
+
     free(ctx);
 }

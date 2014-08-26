@@ -44,43 +44,21 @@ An_DLL void AnCtx_Deinit(AnCtx *ctx);
 /* Open and interface in use. */
 #define AnDeviceState_OPEN 2
 
+typedef struct AnDeviceInfo AnDeviceInfo;
 typedef struct AnDevice AnDevice;
 
-/* Populate context with all available Antumbra devices. Calling
-   AnDevice_Populate on an already populated context does not AnDevice_Free any
-   devices in the device list, but it makes them inaccessible via
-   AnDevice_Get. Devices start in IDLE state. */
-An_DLL AnError AnDevice_Populate(AnCtx *ctx);
+/* Callback function pointer type for hotplug events.
 
-/* Return number of devices available to context. If AnDevice_Populate has not
-   yet been called, this will be 0. */
-An_DLL int AnDevice_GetCount(AnCtx *ctx);
+   dev is only valid during invocation of the callback. */
+typedef void (*AnDevicePlugFn)(AnCtx *ctx, AnDeviceInfo *dev);
 
-/* Get device by index; 0 <= i < AnDevice_GetCount(). If i is out of range,
-   undefined behavior occurs. */
-An_DLL AnDevice *AnDevice_Get(AnCtx *ctx, int i);
+/* Set hotplug callback. */
+An_DLL void AnDevicePlug_SetPlugFn(AnCtx *ctx, AnDevicePlugFn fn);
 
-/* Return USB info through pointers: vendor ID, product ID, null-terminated
-   serial string. If a given out pointer is NULL, the corresponding value is not
-   returned. Serial string lifetime is tied to AnDevice lifetime. */
-An_DLL void AnDevice_Info(AnDevice *dev, uint16_t *vid, uint16_t *pid,
-                          const char **serial);
-
-/* Get state of device (AnDeviceState_*). */
-An_DLL int AnDevice_State(AnDevice *dev);
-
-/* Set USB configuration and claim interface. */
-An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev);
-
-/* Release interface. */
-An_DLL AnError AnDevice_Close(AnCtx *ctx, AnDevice *dev);
-
-/* Free device and associated resources. */
-An_DLL void AnDevice_Free(AnDevice *dev);
-
-/* Synchronously set RGB. */
-An_DLL AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
-                                 uint8_t r, uint8_t g, uint8_t b);
+/* Update device list and fire hotplug events. For best results, this function
+   should be called at a regular interval. Internally, every invocation
+   enumerates all USB devices, so rapid polling is not recommended. */
+An_DLL AnError AnDevicePlug_Update(AnCtx *ctx);
 
 #define AnLog_NONE (-1)
 #define AnLog_ERROR 0
