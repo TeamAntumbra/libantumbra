@@ -27,7 +27,7 @@
 typedef int AnError;
 
 /* Get string message for error. */
-const char *AnError_String(AnError e);
+An_DLL const char *AnError_String(AnError e);
 
 typedef struct AnCtx AnCtx;
 
