@@ -45,6 +45,11 @@ An_DLL void AnCtx_Deinit(AnCtx *ctx);
 #define AnDeviceState_OPEN 2
 
 typedef struct AnDeviceInfo AnDeviceInfo;
+
+An_DLL void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
+                                 uint8_t *bus, uint8_t *addr,
+                                 uint16_t *vid, uint16_t *pid);
+
 typedef struct AnDevice AnDevice;
 
 An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout);

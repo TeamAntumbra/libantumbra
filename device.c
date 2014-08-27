@@ -6,6 +6,16 @@
 #include <errno.h>
 #include <libusb.h>
 
+void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
+                          uint8_t *bus, uint8_t *addr,
+                          uint16_t *vid, uint16_t *pid)
+{
+    if (bus) *bus = info->bus;
+    if (addr) *addr = info->addr;
+    if (vid) *vid = info->vid;
+    if (pid) *pid = info->pid;
+}
+
 AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
 {
     An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);
