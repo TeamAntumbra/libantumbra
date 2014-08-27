@@ -68,7 +68,53 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
         return AnError_LIBUSB;
     }
 
+    struct libusb_config_descriptor *cfgdes;
+    err = libusb_get_active_config_descriptor(info->udev, &cfgdes);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_active_config_descriptor: %s",
+               libusb_strerror(err));
+        free(newnode);
+        free(dev);
+        libusb_close(udevh);
+        return AnError_LIBUSB;
+    }
+
+    if (cfgdes->bNumInterfaces < 1 || cfgdes->interface[0].num_altsetting < 1) {
+        An_LOG(ctx, AnLog_ERROR, "device has no interfaces!");
+        free(newnode);
+        free(dev);
+        libusb_close(udevh);
+        libusb_free_config_descriptor(cfgdes);
+        return AnError_LIBUSB;
+    }
+
+    struct libusb_interface_descriptor intdes = cfgdes->interface[0].altsetting[0];
+    if (intdes.iInterface) {
+        An_LOG(ctx, AnLog_DEBUG,
+               "get magic (string descriptor for int 0 alt 0)");
+        err = libusb_get_string_descriptor_ascii(udevh, intdes.iInterface,
+                                                 (unsigned char *)dev->magic,
+                                                 sizeof dev->magic);
+        if (err) {
+            An_LOG(ctx, AnLog_ERROR, "libusb_get_string_descriptor_ascii: %s",
+                   libusb_strerror(err));
+            free(newnode);
+            free(dev);
+            libusb_close(udevh);
+            libusb_free_config_descriptor(cfgdes);
+            return AnError_LIBUSB;
+        }
+        dev->magic[sizeof dev->magic - 1] = '\0';
+    }
+    else {
+        An_LOG(ctx, AnLog_DEBUG,
+               "no magic (string descriptor for int 0 alt 0)");
+        strncpy(dev->magic, "NO_MAGIC", sizeof dev->magic - 1);
+    }
+    An_LOG(ctx, AnLog_INFO, "magic: %s", dev->magic);
+
     dev->info = *info;
+    dev->cfgdes = cfgdes;
     dev->udevh = udevh;
     newnode->dev = dev;
     newnode->next = ctx->opendevs;
@@ -101,6 +147,7 @@ void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
 void AnDevice_InternalClose(AnCtx *ctx, AnDevice *dev)
 {
     An_LOG(ctx, AnLog_DEBUG, "close USB handle for device %p", dev);
+    libusb_free_config_descriptor(dev->cfgdes);
     /* Final deref on dev->info.udev */
     libusb_close(dev->udevh);
     free(dev);
