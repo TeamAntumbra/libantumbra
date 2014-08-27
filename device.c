@@ -50,6 +50,24 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
         return AnError_LIBUSB;
     }
 
+    An_LOG(ctx, AnLog_DEBUG, "set configuration -1 to reset state");
+    err = libusb_set_configuration(udevh, -1);
+    if (err)
+        An_LOG(ctx, AnLog_WARN,
+               "libusb_set_configuration(-1) failed (not fatal): %s",
+               libusb_strerror(err));
+
+    An_LOG(ctx, AnLog_DEBUG, "set configuration 1");
+    err = libusb_set_configuration(udevh, 1);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_set_configuration(1): %s",
+               libusb_strerror(err));
+        free(newnode);
+        free(dev);
+        libusb_close(udevh);
+        return AnError_LIBUSB;
+    }
+
     dev->info = *info;
     dev->udevh = udevh;
     newnode->dev = dev;
