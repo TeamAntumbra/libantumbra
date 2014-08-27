@@ -17,6 +17,11 @@ void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
     if (pid) *pid = info->pid;
 }
 
+void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info)
+{
+    *info = &dev->info;
+}
+
 AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
 {
     An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);

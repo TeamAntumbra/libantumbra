@@ -52,6 +52,8 @@ An_DLL void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
 
 typedef struct AnDevice AnDevice;
 
+An_DLL void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info);
+
 An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout);
 
 An_DLL void AnDevice_Close(AnCtx *ctx, AnDevice *dev);
