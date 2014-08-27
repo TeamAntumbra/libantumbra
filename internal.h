@@ -25,10 +25,8 @@ struct AnDeviceInfo {
     uint8_t bus;
     uint8_t addr;
 
-    uint16_t vid;
-    uint16_t pid;
-
     libusb_device *udev;
+    struct libusb_device_descriptor devdes;
 };
 
 struct AnDevice {

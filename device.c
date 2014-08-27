@@ -13,8 +13,8 @@ void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
 {
     if (bus) *bus = info->bus;
     if (addr) *addr = info->addr;
-    if (vid) *vid = info->vid;
-    if (pid) *pid = info->pid;
+    if (vid) *vid = info->devdes.idVendor;
+    if (pid) *pid = info->devdes.idProduct;
 }
 
 void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info)
@@ -100,8 +100,8 @@ static bool already_open(AnCtx *ctx, AnDeviceInfo *info)
         AnDeviceInfo *oinfo = &cur->dev->info;
         if (oinfo->bus == info->bus &&
             oinfo->addr == info->addr &&
-            oinfo->vid == info->vid &&
-            oinfo->pid == info->pid)
+            oinfo->devdes.idVendor == info->devdes.idVendor &&
+            oinfo->devdes.idProduct == info->devdes.idProduct)
             return true;
         cur = cur->next;
     }
@@ -137,12 +137,11 @@ AnError AnDevicePlug_Update(AnCtx *ctx)
 
         AnDeviceInfo info = {.bus = libusb_get_bus_number(udev),
                              .addr = libusb_get_device_address(udev),
-                             .vid = devdes.idVendor,
-                             .pid = devdes.idProduct,
-                             .udev = udev};
+                             .udev = udev,
+                             .devdes = devdes};
 
         An_LOG(ctx, AnLog_DEBUG, "  AnDeviceInfo %p: vid 0x%04x pid 0x%04x",
-               &info, info.vid, info.pid);
+               &info, devdes.idVendor, devdes.idProduct);
 
         if (already_open(ctx, &info))
             An_LOG(ctx, AnLog_DEBUG, "  already open; ignore");
