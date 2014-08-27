@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <libusb.h>
+#include <stdbool.h>
 
 void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
                           uint8_t *bus, uint8_t *addr,
@@ -85,4 +86,65 @@ void AnDevice_InternalClose(AnCtx *ctx, AnDevice *dev)
 void AnDevicePlug_SetPlugFn(AnCtx *ctx, AnDevicePlugFn fn)
 {
     ctx->plugfn = fn;
+}
+
+static bool already_open(AnCtx *ctx, AnDeviceInfo *info)
+{
+    AnCtxDevList *cur = ctx->opendevs;
+    while (cur) {
+        AnDeviceInfo *oinfo = &cur->dev->info;
+        if (oinfo->bus == info->bus &&
+            oinfo->addr == info->addr &&
+            oinfo->vid == info->vid &&
+            oinfo->pid == info->pid)
+            return true;
+        cur = cur->next;
+    }
+    return false;
+}
+
+AnError AnDevicePlug_Update(AnCtx *ctx)
+{
+    An_LOG(ctx, AnLog_DEBUG, "enumerate devices...");
+
+    libusb_device **devlist;
+    ssize_t ndevs = libusb_get_device_list(ctx->uctx, &devlist);
+    if (ndevs < 0) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_device_list: %s",
+               libusb_strerror(ndevs));
+        return AnError_LIBUSB;
+    }
+
+    for (ssize_t i = 0; i < ndevs; ++i) {
+        libusb_device *udev = devlist[i];
+        uint8_t bus = libusb_get_bus_number(udev),
+                addr = libusb_get_device_address(udev);
+
+        An_LOG(ctx, AnLog_DEBUG, "device: bus %03d addr %03d", bus, addr);
+
+        struct libusb_device_descriptor devdes;
+        int err = libusb_get_device_descriptor(udev, &devdes);
+        if (err) {
+            An_LOG(ctx, AnLog_ERROR, "libusb_get_device_descriptor: %s",
+                   libusb_strerror(err));
+            continue;
+        }
+
+        AnDeviceInfo info = {.bus = libusb_get_bus_number(udev),
+                             .addr = libusb_get_device_address(udev),
+                             .vid = devdes.idVendor,
+                             .pid = devdes.idProduct,
+                             .udev = udev};
+
+        An_LOG(ctx, AnLog_DEBUG, "  AnDeviceInfo %p: vid 0x%04x pid 0x%04x",
+               &info, info.vid, info.pid);
+
+        if (already_open(ctx, &info))
+            An_LOG(ctx, AnLog_DEBUG, "  already open; ignore");
+        else if (ctx->plugfn)
+            (*ctx->plugfn)(ctx, &info);
+    }
+
+    libusb_free_device_list(devlist, 1);
+    return AnError_SUCCESS;
 }
