@@ -186,13 +186,19 @@ static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev)
 
 AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
 {
-    An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);
+    An_LOG(ctx, AnLog_INFO,
+           "open device: bus %03d addr %03d vid 0x%04x pid 0x%04x",
+           info->bus, info->addr, info->devdes.idVendor,
+           info->devdes.idProduct);
     return part_alloc_node(ctx, info, devout);
 }
 
 void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
 {
-    An_LOG(ctx, AnLog_DEBUG, "close device %p", dev);
+    An_LOG(ctx, AnLog_INFO,
+           "close device: bus %03d addr %03d vid 0x%04x pid 0x%04x",
+           dev->info.bus, dev->info.addr, dev->info.devdes.idVendor,
+           dev->info.devdes.idProduct);
     AnCtxDevList *prev = NULL,
                  *cur = ctx->opendevs;
     while (cur) {
