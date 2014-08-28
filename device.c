@@ -22,10 +22,21 @@ void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info)
     *info = &dev->info;
 }
 
-AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
-{
-    An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev);
+static AnError part_alloc_node(AnCtx *ctx, AnDeviceInfo *info,
+                               AnDevice **devout);
+static AnError part_open_device(AnCtx *ctx, AnDeviceInfo *info,
+                                AnDevice **devout);
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev);
+static AnError part_get_cfgdes(AnCtx *ctx, AnDevice *dev);
+static AnError part_get_magic(AnCtx *ctx, AnDevice *dev);
+static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev);
+static bool parse_magic(const char *magic, uint8_t *outep, uint8_t *inep,
+                        const char **misc);
 
+static AnError part_alloc_node(AnCtx *ctx, AnDeviceInfo *info,
+                               AnDevice **devout)
+{
     AnCtxDevList *newnode = malloc(sizeof *newnode);
     if (!newnode) {
         An_LOG(ctx, AnLog_ERROR, "malloc AnCtxDevList failed: %s",
@@ -33,10 +44,24 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
         return AnError_MALLOCFAILED;
     }
 
+    int err = part_open_device(ctx, info, devout);
+    if (err) {
+        free(newnode);
+        return err;
+    }
+
+    newnode->dev = *devout;
+    newnode->next = ctx->opendevs;
+    ctx->opendevs = newnode;
+    return AnError_SUCCESS;
+}
+
+static AnError part_open_device(AnCtx *ctx, AnDeviceInfo *info,
+                                AnDevice **devout)
+{
     AnDevice *dev = malloc(sizeof *dev);
     if (!dev) {
         An_LOG(ctx, AnLog_ERROR, "malloc AnDevice failed: %s", strerror(errno));
-        free(newnode);
         return AnError_MALLOCFAILED;
     }
 
@@ -45,82 +70,124 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
     if (err) {
         An_LOG(ctx, AnLog_ERROR, "libusb_open failed: %s",
                libusb_strerror(err));
-        free(newnode);
         free(dev);
         return AnError_LIBUSB;
     }
 
+    dev->info = *info;
+    dev->udevh = udevh;
+
+    err = part_configure_device(ctx, dev);
+    if (err) {
+        libusb_close(udevh);
+        free(dev);
+        return err;
+    }
+
+    *devout = dev;
+    return AnError_SUCCESS;
+}
+
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev)
+{
     An_LOG(ctx, AnLog_DEBUG, "set configuration -1 to reset state");
-    err = libusb_set_configuration(udevh, -1);
+    int err = libusb_set_configuration(dev->udevh, -1);
     if (err)
         An_LOG(ctx, AnLog_WARN,
                "libusb_set_configuration(-1) failed (not fatal): %s",
                libusb_strerror(err));
 
     An_LOG(ctx, AnLog_DEBUG, "set configuration 1");
-    err = libusb_set_configuration(udevh, 1);
+    err = libusb_set_configuration(dev->udevh, 1);
     if (err) {
         An_LOG(ctx, AnLog_ERROR, "libusb_set_configuration(1): %s",
                libusb_strerror(err));
-        free(newnode);
-        free(dev);
-        libusb_close(udevh);
         return AnError_LIBUSB;
     }
 
+    An_LOG(ctx, AnLog_DEBUG, "claim interface 0");
+    err = libusb_claim_interface(dev->udevh, 0);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_claim_interface(0): %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
+    }
+
+    return part_get_cfgdes(ctx, dev);
+}
+
+static AnError part_get_cfgdes(AnCtx *ctx, AnDevice *dev)
+{
     struct libusb_config_descriptor *cfgdes;
-    err = libusb_get_active_config_descriptor(info->udev, &cfgdes);
+    int err = libusb_get_active_config_descriptor(dev->info.udev, &cfgdes);
     if (err) {
         An_LOG(ctx, AnLog_ERROR, "libusb_get_active_config_descriptor: %s",
                libusb_strerror(err));
-        free(newnode);
-        free(dev);
-        libusb_close(udevh);
         return AnError_LIBUSB;
     }
 
-    if (cfgdes->bNumInterfaces < 1 || cfgdes->interface[0].num_altsetting < 1) {
-        An_LOG(ctx, AnLog_ERROR, "device has no interfaces!");
-        free(newnode);
-        free(dev);
-        libusb_close(udevh);
+    dev->cfgdes = cfgdes;
+
+    err = part_get_magic(ctx, dev);
+    if (err) {
         libusb_free_config_descriptor(cfgdes);
+        return err;
+    }
+
+    return AnError_SUCCESS;
+}
+
+static AnError part_get_magic(AnCtx *ctx, AnDevice *dev)
+{
+    if (dev->cfgdes->bNumInterfaces < 1 ||
+        dev->cfgdes->interface[0].num_altsetting < 1) {
+        An_LOG(ctx, AnLog_ERROR, "device has no interfaces!");
         return AnError_LIBUSB;
     }
 
-    struct libusb_interface_descriptor intdes = cfgdes->interface[0].altsetting[0];
-    if (intdes.iInterface) {
-        An_LOG(ctx, AnLog_DEBUG,
-               "get magic (string descriptor for int 0 alt 0)");
-        err = libusb_get_string_descriptor_ascii(udevh, intdes.iInterface,
-                                                 (unsigned char *)dev->magic,
-                                                 sizeof dev->magic);
-        if (err) {
-            An_LOG(ctx, AnLog_ERROR, "libusb_get_string_descriptor_ascii: %s",
-                   libusb_strerror(err));
-            free(newnode);
-            free(dev);
-            libusb_close(udevh);
-            libusb_free_config_descriptor(cfgdes);
-            return AnError_LIBUSB;
-        }
-        dev->magic[sizeof dev->magic - 1] = '\0';
+    struct libusb_interface_descriptor intdes = (
+        dev->cfgdes->interface[0].altsetting[0]
+    );
+
+    if (!intdes.iInterface) {
+        An_LOG(ctx, AnLog_ERROR, "device has no interface string descriptor");
+        return AnError_LIBUSB;
     }
-    else {
-        An_LOG(ctx, AnLog_DEBUG,
-               "no magic (string descriptor for int 0 alt 0)");
-        strncpy(dev->magic, "NO_MAGIC", sizeof dev->magic - 1);
+
+    int err = libusb_get_string_descriptor_ascii(
+        dev->udevh, intdes.iInterface, (unsigned char *)dev->magic,
+        sizeof dev->magic - 1
+    );
+    if (err < 0) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_string_descriptor_ascii: %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
     }
+    dev->magic[sizeof dev->magic - 1] = '\0';
     An_LOG(ctx, AnLog_INFO, "magic: %s", dev->magic);
 
-    dev->info = *info;
-    dev->cfgdes = cfgdes;
-    dev->udevh = udevh;
-    newnode->dev = dev;
-    newnode->next = ctx->opendevs;
-    ctx->opendevs = newnode;
-    *devout = dev;
+    return part_parse_magic(ctx, dev);
+}
+
+static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev)
+{
+    uint8_t epo, epi;
+    const char *misc;
+
+    if (!parse_magic(dev->magic, &epo, &epi, &misc)) {
+        An_LOG(ctx, AnLog_ERROR, "invalid magic");
+        return AnError_LIBUSB;
+    }
+
+    dev->epo = epo;
+    dev->epi = epi;
     return AnError_SUCCESS;
+}
+
+AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
+{
+    An_LOG(ctx, AnLog_DEBUG, "open device from AnDeviceInfo %p", info);
+    return part_alloc_node(ctx, info, devout);
 }
 
 void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
@@ -151,6 +218,35 @@ void AnDevice_InternalClose(AnCtx *ctx, AnDevice *dev)
     /* Final deref on dev->info.udev */
     libusb_close(dev->udevh);
     free(dev);
+}
+
+static bool parse_magic(const char *magic, uint8_t *outep, uint8_t *inep,
+                        const char **misc)
+{
+    /* Magic form as regex: io\.antumbra\.glowapi/([0-9a-fA-F]{2}/){2}.* */
+
+    static const char prefix[] = "io.antumbra.glowapi/";
+    if (strstr(magic, prefix) != magic)
+        return false;
+
+    const char *endpoints = magic + strlen(prefix);
+    static const char hexd[] = "0123456789abcdefABCDEF";
+    if (!(strchr(hexd, endpoints[0]) && strchr(hexd, endpoints[1]) &&
+          endpoints[2] == '/' &&
+          strchr(hexd, endpoints[3]) && strchr(hexd, endpoints[4]) &&
+          endpoints[5] == '/'))
+        return false;
+
+    char outepstr[3], inepstr[3];
+    memcpy(outepstr, endpoints, 2);
+    memcpy(inepstr, endpoints + 3, 2);
+    outepstr[2] = '\0';
+    inepstr[2] = '\0';
+
+    *outep = strtol(outepstr, NULL, 16),
+    *inep = strtol(inepstr, NULL, 16);
+    *misc = endpoints + 6;
+    return true;
 }
 
 void AnDevicePlug_SetPlugFn(AnCtx *ctx, AnDevicePlugFn fn)

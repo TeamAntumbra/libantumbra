@@ -33,6 +33,9 @@ struct AnDevice {
     AnDeviceInfo info;
     struct libusb_config_descriptor *cfgdes;
     char magic[128];
+
+    uint8_t epo;
+    uint8_t epi;
     libusb_device_handle *udevh;
 };
 
