@@ -209,7 +209,7 @@ AnError AnDevicePlug_Update(AnCtx *ctx)
                &info, devdes.idVendor, devdes.idProduct);
 
         if (already_open(ctx, &info))
-            An_LOG(ctx, AnLog_DEBUG, "  already open; ignore");
+            An_LOG(ctx, AnLog_DEBUG, "  already open; do not invoke callback");
         else if (ctx->plugfn)
             (*ctx->plugfn)(ctx, &info);
     }
