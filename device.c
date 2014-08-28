@@ -179,6 +179,11 @@ static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev)
         return AnError_LIBUSB;
     }
 
+    if (epo & 0x80 || ~epi & 0x80) {
+        An_LOG(ctx, AnLog_ERROR, "invalid endpoint direction");
+        return AnError_LIBUSB;
+    }
+
     dev->epo = epo;
     dev->epi = epi;
     return AnError_SUCCESS;
