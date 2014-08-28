@@ -184,6 +184,9 @@ static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev)
         return AnError_LIBUSB;
     }
 
+    An_LOG(ctx, AnLog_DEBUG, "base protocol endpoints: OUT 0x%02x IN 0x%02x",
+           epo, epi);
+
     dev->epo = epo;
     dev->epi = epi;
     return AnError_SUCCESS;
