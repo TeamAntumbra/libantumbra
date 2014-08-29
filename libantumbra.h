@@ -94,4 +94,14 @@ An_DLL void AnLog_SetLogging(AnCtx *ctx, AnLogLevel lvl, FILE *f);
    level. */
 An_DLL const char *AnLogLevel_Sigil(AnLogLevel lvl);
 
+/* Synchronously send packet of <=64 bytes on OUT endpoint. Actual sent packet
+   is padded to 64 bytes and zero-filled. May time out. */
+AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
+                        unsigned int sz);
+
+/* Synchronously receive packet of <=64 bytes on IN endpoint. Actual received
+   packet is 64 bytes, but only `sz` bytes are copied into buffer. May time
+   out. */
+AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz);
+
 #endif
