@@ -74,3 +74,43 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz)
     memcpy(buf, fixbuf, sz);
     return AnError_SUCCESS;
 }
+
+AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
+                       const void *cmddata, unsigned int cmddata_sz,
+                       uint8_t *status, void *rspdata, unsigned int rspdata_sz)
+{
+    An_LOG(ctx, AnLog_DEBUG,
+           "send command: api 0x%08x cmd 0x%04hx cmdlen %d rsplen %d",
+           api, cmd, cmddata_sz, rspdata_sz);
+
+    uint8_t fixbuf[64];
+    if (cmddata_sz > 56) {
+        An_LOG(ctx, AnLog_ERROR, "max cmd payload is 56");
+        return AnError_OUTOFRANGE;
+    }
+    if (rspdata_sz > 56) {
+        An_LOG(ctx, AnLog_ERROR, "max rsp payload is 56");
+        return AnError_OUTOFRANGE;
+    }
+    memset(fixbuf, 0, sizeof fixbuf);
+
+    fixbuf[0] = api >> 24;
+    fixbuf[1] = api >> 16 & 0xff;
+    fixbuf[2] = api >> 8 & 0xff;
+    fixbuf[3] = api & 0xff;
+    fixbuf[4] = cmd >> 8 & 0xff;
+    fixbuf[5] = cmd & 0xff;
+
+    memcpy(fixbuf + 8, cmddata, cmddata_sz);
+
+    AnError err = AnCmd_SendRaw_S(ctx, dev, fixbuf, sizeof fixbuf);
+    if (err)
+        return err;
+    err = AnCmd_RecvRaw_S(ctx, dev, fixbuf, sizeof fixbuf);
+    if (err)
+        return err;
+
+    *status = fixbuf[0];
+    memcpy(rspdata, fixbuf + 8, rspdata_sz);
+    return AnError_SUCCESS;
+}

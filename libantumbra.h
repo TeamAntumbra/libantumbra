@@ -104,4 +104,11 @@ AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
    out. */
 AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz);
 
+/* Synchronously send command and receive response. Given command data is <=56
+   bytes and zero-padded to 56. Response data is 56 bytes but only `rspdata_sz`
+   bytes are copied to `rspdata`. May time out. */
+AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
+                       const void *cmddata, unsigned int cmddata_sz,
+                       uint8_t *status, void *rspdata, unsigned int rspdata_sz);
+
 #endif
