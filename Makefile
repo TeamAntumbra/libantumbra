@@ -1,4 +1,4 @@
-CFLAGS := $(addcflags) -Wall -std=gnu99
+CFLAGS := -Wall -std=gnu99 $(addcflags)
 LDFLAGS :=
 LDLIBS :=
 
