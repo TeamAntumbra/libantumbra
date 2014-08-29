@@ -32,7 +32,8 @@ AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
         return AnError_OUTOFRANGE;
     }
     memset(fixbuf, 0, sizeof fixbuf);
-    memcpy(fixbuf, buf, sz);
+    if (buf)
+        memcpy(fixbuf, buf, sz);
 
     An_LOG(ctx, AnLog_DEBUG, "send packet:");
     log_hex(ctx, fixbuf, sizeof fixbuf);
@@ -71,7 +72,8 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz)
     An_LOG(ctx, AnLog_DEBUG, "receive packet:");
     log_hex(ctx, fixbuf, sizeof fixbuf);
 
-    memcpy(buf, fixbuf, sz);
+    if (buf)
+        memcpy(buf, fixbuf, sz);
     return AnError_SUCCESS;
 }
 
@@ -101,7 +103,8 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
     fixbuf[4] = cmd >> 8 & 0xff;
     fixbuf[5] = cmd & 0xff;
 
-    memcpy(fixbuf + 8, cmddata, cmddata_sz);
+    if (cmddata)
+        memcpy(fixbuf + 8, cmddata, cmddata_sz);
 
     AnError err = AnCmd_SendRaw_S(ctx, dev, fixbuf, sizeof fixbuf);
     if (err)
@@ -110,7 +113,9 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
     if (err)
         return err;
 
-    *status = fixbuf[0];
-    memcpy(rspdata, fixbuf + 8, rspdata_sz);
+    if (status)
+        *status = fixbuf[0];
+    if (rspdata)
+        memcpy(rspdata, fixbuf + 8, rspdata_sz);
     return AnError_SUCCESS;
 }

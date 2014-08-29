@@ -95,18 +95,31 @@ An_DLL void AnLog_SetLogging(AnCtx *ctx, AnLogLevel lvl, FILE *f);
 An_DLL const char *AnLogLevel_Sigil(AnLogLevel lvl);
 
 /* Synchronously send packet of <=64 bytes on OUT endpoint. Actual sent packet
-   is padded to 64 bytes and zero-filled. May time out. */
+   is padded to 64 bytes and zero-filled. May time out.
+
+   If `sz` is 0, a zero-filled packet is sent. `buf` may be NULL in this
+   case. */
 AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
                         unsigned int sz);
 
 /* Synchronously receive packet of <=64 bytes on IN endpoint. Actual received
    packet is 64 bytes, but only `sz` bytes are copied into buffer. May time
-   out. */
+   out.
+
+   If `sz` is 0, the packet is discarded. `buf` may be NULL in this case. */
 AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz);
 
 /* Synchronously send command and receive response. Given command data is <=56
    bytes and zero-padded to 56. Response data is 56 bytes but only `rspdata_sz`
-   bytes are copied to `rspdata`. May time out. */
+   bytes are copied to `rspdata`. May time out.
+
+   If `cmddata_sz` is 0, a zero-filled command payload is sent. `cmddata` may be
+   NULL in this case.
+
+   If `rspdata_sz` is 0, the response payload is discarded. `rspdata` may be
+   NULL in this case.
+
+   If `status` is NULL, the response status is discarded. */
 AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
                        const void *cmddata, unsigned int cmddata_sz,
                        uint8_t *status, void *rspdata, unsigned int rspdata_sz);
