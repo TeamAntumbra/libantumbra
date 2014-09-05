@@ -62,8 +62,8 @@ libantumbra.so: LDFLAGS += -shared -fPIC
 libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.so: $(objs)
 
-test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
-test: test.o hsv.o libantumbra.a
+test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs) -L. -lantumbra
+test: test.o hsv.o
 
 else ifeq ($(os),darwin)
 
