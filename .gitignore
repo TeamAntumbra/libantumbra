@@ -5,4 +5,4 @@
 /libusb/
 *.exe
 *.dll
-/test
+/antumbratool
