@@ -17,7 +17,6 @@ struct AnCtx {
     AnLogLevel loglevel;
     FILE *logf;
     libusb_context *uctx;
-    AnDevicePlugFn plugfn;
     AnCtxDevList *opendevs;
 };
 

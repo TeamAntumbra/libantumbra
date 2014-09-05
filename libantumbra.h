@@ -58,18 +58,10 @@ An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout);
 
 An_DLL void AnDevice_Close(AnCtx *ctx, AnDevice *dev);
 
-/* Callback function pointer type for hotplug events.
+An_DLL AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs,
+                                size_t *outndevs);
 
-   dev is only valid during invocation of the callback. */
-typedef void (*AnDevicePlugFn)(AnCtx *ctx, AnDeviceInfo *dev);
-
-/* Set hotplug callback. */
-An_DLL void AnDevicePlug_SetPlugFn(AnCtx *ctx, AnDevicePlugFn fn);
-
-/* Update device list and fire hotplug events. For best results, this function
-   should be called at a regular interval. Internally, every invocation
-   enumerates all USB devices, so rapid polling is not recommended. */
-An_DLL AnError AnDevicePlug_Update(AnCtx *ctx);
+An_DLL void AnDevice_FreeList(AnDeviceInfo **devs);
 
 #define AnLog_NONE (-1)
 #define AnLog_ERROR 0
@@ -99,15 +91,16 @@ An_DLL const char *AnLogLevel_Sigil(AnLogLevel lvl);
 
    If `sz` is 0, a zero-filled packet is sent. `buf` may be NULL in this
    case. */
-AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
-                        unsigned int sz);
+An_DLL AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
+                               unsigned int sz);
 
 /* Synchronously receive packet of <=64 bytes on IN endpoint. Actual received
    packet is 64 bytes, but only `sz` bytes are copied into buffer. May time
    out.
 
    If `sz` is 0, the packet is discarded. `buf` may be NULL in this case. */
-AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz);
+An_DLL AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf,
+                               unsigned int sz);
 
 /* Synchronously send command and receive response. Given command data is <=56
    bytes and zero-padded to 56. Response data is 56 bytes but only `rspdata_sz`
@@ -120,8 +113,10 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz);
    NULL in this case.
 
    If `status` is NULL, the response status is discarded. */
-AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
-                       const void *cmddata, unsigned int cmddata_sz,
-                       uint8_t *status, void *rspdata, unsigned int rspdata_sz);
+An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
+                              uint32_t api, uint16_t cmd,
+                              const void *cmddata, unsigned int cmddata_sz,
+                              uint8_t *status,
+                              void *rspdata, unsigned int rspdata_sz);
 
 #endif

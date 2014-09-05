@@ -9,7 +9,7 @@
 
 #include "hsv.h"
 
-static void plugfn(AnCtx *ctx, AnDeviceInfo *info)
+static void devfn(AnCtx *ctx, AnDeviceInfo *info)
 {
     AnDevice *dev;
     if (!AnDevice_Open(ctx, info, &dev)) {
@@ -26,9 +26,15 @@ int main(int argc, char **argv)
     }
     AnLog_SetLogging(ctx, AnLog_DEBUG, stderr);
 
-    AnDevicePlug_SetPlugFn(ctx, &plugfn);
-    AnDevicePlug_Update(ctx);
+    size_t ndevs;
+    AnDeviceInfo **devs;
+    if (AnDevice_GetList(ctx, &devs, &ndevs))
+        return 1;
 
+    for (size_t i = 0; i < ndevs; ++i)
+        devfn(ctx, devs[i]);
+
+    AnDevice_FreeList(devs);
     AnCtx_Deinit(ctx);
     return 0;
 }

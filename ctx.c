@@ -16,7 +16,6 @@ AnError AnCtx_Init(AnCtx **ctx)
 
     newctx->loglevel = AnLog_NONE;
     newctx->logf = NULL;
-    newctx->plugfn = NULL;
     newctx->opendevs = NULL;
 
     *ctx = newctx;

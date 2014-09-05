@@ -263,26 +263,6 @@ static bool parse_magic(const char *magic, uint8_t *outep, uint8_t *inep,
     return true;
 }
 
-void AnDevicePlug_SetPlugFn(AnCtx *ctx, AnDevicePlugFn fn)
-{
-    ctx->plugfn = fn;
-}
-
-static bool already_open(AnCtx *ctx, AnDeviceInfo *info)
-{
-    AnCtxDevList *cur = ctx->opendevs;
-    while (cur) {
-        AnDeviceInfo *oinfo = &cur->dev->info;
-        if (oinfo->bus == info->bus &&
-            oinfo->addr == info->addr &&
-            oinfo->devdes.idVendor == info->devdes.idVendor &&
-            oinfo->devdes.idProduct == info->devdes.idProduct)
-            return true;
-        cur = cur->next;
-    }
-    return false;
-}
-
 static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
                              libusb_device *udev)
 {
@@ -299,41 +279,67 @@ static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
     return AnError_SUCCESS;
 }
 
-AnError AnDevicePlug_Update(AnCtx *ctx)
+AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs, size_t *outndevs)
 {
     An_LOG(ctx, AnLog_DEBUG, "enumerate devices...");
 
-    libusb_device **devlist;
-    ssize_t ndevs = libusb_get_device_list(ctx->uctx, &devlist);
+    libusb_device **udevs;
+    ssize_t ndevs = libusb_get_device_list(ctx->uctx, &udevs);
     if (ndevs < 0) {
         An_LOG(ctx, AnLog_ERROR, "libusb_get_device_list: %s",
                libusb_strerror(ndevs));
         return AnError_LIBUSB;
     }
 
+    AnDeviceInfo **devs = malloc((ndevs + 1) * sizeof *devs);
+    if (!devs) {
+        An_LOG(ctx, AnLog_ERROR, "malloc: %s", strerror(errno));
+        return AnError_MALLOCFAILED;
+    }
+    memset(devs, 0, (ndevs + 1) * sizeof *devs);
+
+    size_t j = 0;
     for (ssize_t i = 0; i < ndevs; ++i) {
-        libusb_device *udev = devlist[i];
-        uint8_t bus = libusb_get_bus_number(udev),
-                addr = libusb_get_device_address(udev);
-
-        An_LOG(ctx, AnLog_DEBUG, "device: bus %03d addr %03d", bus, addr);
-
+        libusb_device *udev = udevs[i];
         AnDeviceInfo info;
+
+        An_LOG(ctx, AnLog_DEBUG, "device: bus %03d addr %03d",
+               libusb_get_bus_number(udev), libusb_get_device_address(udev));
+
         if (populate_info(ctx, &info, udev))
             continue;
 
-        An_LOG(ctx, AnLog_DEBUG, "  AnDeviceInfo %p: vid 0x%04x pid 0x%04x",
-               &info, info.devdes.idVendor, info.devdes.idProduct);
+        An_LOG(ctx, AnLog_DEBUG, "vid 0x%04x pid 0x%04x",
+               info.devdes.idVendor, info.devdes.idProduct);
 
         if (!(info.devdes.idVendor == 0x03eb &&
-              info.devdes.idProduct == 0x2040))
+              info.devdes.idProduct == 0x2040)) {
             An_LOG(ctx, AnLog_DEBUG, "  does not match Antumbra VID/PID");
-        else if (already_open(ctx, &info))
-            An_LOG(ctx, AnLog_DEBUG, "  already open; do not invoke callback");
-        else if (ctx->plugfn)
-            (*ctx->plugfn)(ctx, &info);
+            continue;
+        }
+
+        devs[j] = malloc(sizeof *devs[j]);
+        if (!devs[j]) {
+            An_LOG(ctx, AnLog_ERROR, "malloc: %s", strerror(errno));
+            continue;
+        }
+
+        libusb_ref_device(udev);
+        *devs[j] = info;
+        ++j;
     }
 
-    libusb_free_device_list(devlist, 1);
+    libusb_free_device_list(udevs, 1);
+    *outdevs = devs;
+    *outndevs = j;
     return AnError_SUCCESS;
+}
+
+void AnDevice_FreeList(AnDeviceInfo **devs)
+{
+    for (size_t i = 0; devs[i]; ++i) {
+        libusb_unref_device(devs[i]->udev);
+        free(devs[i]);
+    }
+    free(devs);
 }
