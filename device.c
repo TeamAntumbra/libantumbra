@@ -283,6 +283,22 @@ static bool already_open(AnCtx *ctx, AnDeviceInfo *info)
     return false;
 }
 
+static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
+                             libusb_device *udev)
+{
+    int err = libusb_get_device_descriptor(udev, &info->devdes);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_device_descriptor: %s",
+               libusb_strerror(err));
+        return err;
+    }
+
+    info->bus = libusb_get_bus_number(udev);
+    info->addr = libusb_get_device_address(udev);
+    info->udev = udev;
+    return AnError_SUCCESS;
+}
+
 AnError AnDevicePlug_Update(AnCtx *ctx)
 {
     An_LOG(ctx, AnLog_DEBUG, "enumerate devices...");
@@ -302,21 +318,12 @@ AnError AnDevicePlug_Update(AnCtx *ctx)
 
         An_LOG(ctx, AnLog_DEBUG, "device: bus %03d addr %03d", bus, addr);
 
-        struct libusb_device_descriptor devdes;
-        int err = libusb_get_device_descriptor(udev, &devdes);
-        if (err) {
-            An_LOG(ctx, AnLog_ERROR, "libusb_get_device_descriptor: %s",
-                   libusb_strerror(err));
+        AnDeviceInfo info;
+        if (populate_info(ctx, &info, udev))
             continue;
-        }
-
-        AnDeviceInfo info = {.bus = libusb_get_bus_number(udev),
-                             .addr = libusb_get_device_address(udev),
-                             .udev = udev,
-                             .devdes = devdes};
 
         An_LOG(ctx, AnLog_DEBUG, "  AnDeviceInfo %p: vid 0x%04x pid 0x%04x",
-               &info, devdes.idVendor, devdes.idProduct);
+               &info, info.devdes.idVendor, info.devdes.idProduct);
 
         if (!(info.devdes.idVendor == 0x03eb &&
               info.devdes.idProduct == 0x2040))
