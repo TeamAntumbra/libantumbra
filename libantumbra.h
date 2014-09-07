@@ -44,43 +44,24 @@ An_DLL void AnCtx_Deinit(AnCtx *ctx);
 /* Open and interface in use. */
 #define AnDeviceState_OPEN 2
 
+typedef struct AnDeviceInfo AnDeviceInfo;
+
+An_DLL void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
+                                 uint8_t *bus, uint8_t *addr,
+                                 uint16_t *vid, uint16_t *pid);
+
 typedef struct AnDevice AnDevice;
 
-/* Populate context with all available Antumbra devices. Calling
-   AnDevice_Populate on an already populated context does not AnDevice_Free any
-   devices in the device list, but it makes them inaccessible via
-   AnDevice_Get. Devices start in IDLE state. */
-An_DLL AnError AnDevice_Populate(AnCtx *ctx);
+An_DLL void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info);
 
-/* Return number of devices available to context. If AnDevice_Populate has not
-   yet been called, this will be 0. */
-An_DLL int AnDevice_GetCount(AnCtx *ctx);
+An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout);
 
-/* Get device by index; 0 <= i < AnDevice_GetCount(). If i is out of range,
-   undefined behavior occurs. */
-An_DLL AnDevice *AnDevice_Get(AnCtx *ctx, int i);
+An_DLL void AnDevice_Close(AnCtx *ctx, AnDevice *dev);
 
-/* Return USB info through pointers: vendor ID, product ID, null-terminated
-   serial string. If a given out pointer is NULL, the corresponding value is not
-   returned. Serial string lifetime is tied to AnDevice lifetime. */
-An_DLL void AnDevice_Info(AnDevice *dev, uint16_t *vid, uint16_t *pid,
-                          const char **serial);
+An_DLL AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs,
+                                size_t *outndevs);
 
-/* Get state of device (AnDeviceState_*). */
-An_DLL int AnDevice_State(AnDevice *dev);
-
-/* Set USB configuration and claim interface. */
-An_DLL AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev);
-
-/* Release interface. */
-An_DLL AnError AnDevice_Close(AnCtx *ctx, AnDevice *dev);
-
-/* Free device and associated resources. */
-An_DLL void AnDevice_Free(AnDevice *dev);
-
-/* Synchronously set RGB. */
-An_DLL AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
-                                 uint8_t r, uint8_t g, uint8_t b);
+An_DLL void AnDevice_FreeList(AnDeviceInfo **devs);
 
 #define AnLog_NONE (-1)
 #define AnLog_ERROR 0
@@ -104,5 +85,38 @@ An_DLL void AnLog_SetLogging(AnCtx *ctx, AnLogLevel lvl, FILE *f);
 /* Return a sigil (DD/II/WW/EE) for a given error level, or ?? for unknown
    level. */
 An_DLL const char *AnLogLevel_Sigil(AnLogLevel lvl);
+
+/* Synchronously send packet of <=64 bytes on OUT endpoint. Actual sent packet
+   is padded to 64 bytes and zero-filled. May time out.
+
+   If `sz` is 0, a zero-filled packet is sent. `buf` may be NULL in this
+   case. */
+An_DLL AnError AnCmd_SendRaw_S(AnCtx *ctx, AnDevice *dev, const void *buf,
+                               unsigned int sz);
+
+/* Synchronously receive packet of <=64 bytes on IN endpoint. Actual received
+   packet is 64 bytes, but only `sz` bytes are copied into buffer. May time
+   out.
+
+   If `sz` is 0, the packet is discarded. `buf` may be NULL in this case. */
+An_DLL AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf,
+                               unsigned int sz);
+
+/* Synchronously send command and receive response. Given command data is <=56
+   bytes and zero-padded to 56. Response data is 56 bytes but only `rspdata_sz`
+   bytes are copied to `rspdata`. May time out.
+
+   If `cmddata_sz` is 0, a zero-filled command payload is sent. `cmddata` may be
+   NULL in this case.
+
+   If `rspdata_sz` is 0, the response payload is discarded. `rspdata` may be
+   NULL in this case.
+
+   If `status` is NULL, the response status is discarded. */
+An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
+                              uint32_t api, uint16_t cmd,
+                              const void *cmddata, unsigned int cmddata_sz,
+                              uint8_t *status,
+                              void *rspdata, unsigned int rspdata_sz);
 
 #endif

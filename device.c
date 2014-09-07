@@ -3,213 +3,343 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <libusb.h>
+#include <stdbool.h>
 
-AnError AnDevice_Populate(AnCtx *ctx)
+void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
+                          uint8_t *bus, uint8_t *addr,
+                          uint16_t *vid, uint16_t *pid)
 {
-    libusb_device **udevs;
-    ssize_t ndevs = libusb_get_device_list(ctx->uctx, &udevs);
-    if (ndevs < 0) {
-        An_LOG(ctx, AnLog_ERROR, "libusb_get_device_list: %s", libusb_strerror(ndevs));
-        return AnError_LIBUSB;
-    }
+    if (bus) *bus = info->bus;
+    if (addr) *addr = info->addr;
+    if (vid) *vid = info->devdes.idVendor;
+    if (pid) *pid = info->devdes.idProduct;
+}
 
-    free(ctx->devs);
-    ctx->devs = malloc(ndevs * sizeof *ctx->devs);
-    if (!ctx->devs) {
-        An_LOG(ctx, AnLog_ERROR, "malloc ctx->devs failed");
-        libusb_free_device_list(udevs, 1);
+void AnDevice_Info(AnDevice *dev, AnDeviceInfo **info)
+{
+    *info = &dev->info;
+}
+
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev);
+static AnError part_alloc_node(AnCtx *ctx, AnDeviceInfo *info,
+                               AnDevice **devout);
+static AnError part_open_device(AnCtx *ctx, AnDeviceInfo *info,
+                                AnDevice **devout);
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev);
+static AnError part_get_cfgdes(AnCtx *ctx, AnDevice *dev);
+static AnError part_get_magic(AnCtx *ctx, AnDevice *dev);
+static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev);
+static bool parse_magic(const char *magic, uint8_t *outep, uint8_t *inep,
+                        const char **misc);
+
+static AnError part_alloc_node(AnCtx *ctx, AnDeviceInfo *info,
+                               AnDevice **devout)
+{
+    AnCtxDevList *newnode = malloc(sizeof *newnode);
+    if (!newnode) {
+        An_LOG(ctx, AnLog_ERROR, "malloc AnCtxDevList failed: %s",
+               strerror(errno));
         return AnError_MALLOCFAILED;
     }
-    for (int i = 0; i < ndevs; ++i)
-        ctx->devs[i] = NULL;
 
-    int devidx = 0;
-    for (int i = 0; i < ndevs; ++i) {
-        int err;
-        struct libusb_device_descriptor devdes;
-
-        err = libusb_get_device_descriptor(udevs[i], &devdes);
-        if (err) {
-            An_LOG(ctx, AnLog_ERROR, "libusb_get_device_descriptor: %s", libusb_strerror(err));
-            continue;
-        }
-
-        An_LOG(ctx, AnLog_INFO, "enumerate device: vid 0x%04x pid 0x%04x", devdes.idVendor,
-               devdes.idProduct);
-        if (!(devdes.idVendor == 0x03eb && devdes.idProduct == 0x2040)) {
-            An_LOG(ctx, AnLog_INFO, " (unknown vid/pid; ignore)");
-            continue;
-        }
-        An_LOG(ctx, AnLog_INFO, " Antumbra recognized");
-
-        struct libusb_device_handle *devhnd;
-        err = libusb_open(udevs[i], &devhnd);
-        if (err) {
-            An_LOG(ctx, AnLog_ERROR, " libusb_open: %s", libusb_strerror(err));
-            continue;
-        }
-
-        char serial[sizeof ctx->devs[0]->serial];
-        int nchr;
-        nchr = libusb_get_string_descriptor_ascii(
-            devhnd, devdes.iSerialNumber, (unsigned char *)serial, sizeof serial
-        );
-        serial[sizeof serial - 1] = 0;
-        if (nchr < 0) {
-            An_LOG(ctx, AnLog_ERROR, " libusb_get_string_descriptor_ascii: %s",
-                   libusb_strerror(nchr));
-            libusb_close(devhnd);
-            continue;
-        }
-        An_LOG(ctx, AnLog_DEBUG, " serial %.*s", nchr, serial);
-
-        AnDevice *dev = malloc(sizeof *dev);
-        if (!dev) {
-            An_LOG(ctx, AnLog_ERROR, " malloc AnDevice failed");
-            libusb_close(devhnd);
-            continue;
-        }
-
-        dev->vid = devdes.idVendor;
-        dev->pid = devdes.idProduct;
-        memcpy(dev->serial, serial, sizeof dev->serial);
-        dev->state = AnDeviceState_IDLE;
-        dev->dev = udevs[i];
-        dev->devh = devhnd;
-
-        ctx->devs[devidx++] = dev;
+    int err = part_open_device(ctx, info, devout);
+    if (err) {
+        free(newnode);
+        return err;
     }
-    ctx->ndevs = devidx;
 
-    libusb_free_device_list(udevs, 1);
+    newnode->dev = *devout;
+    newnode->next = ctx->opendevs;
+    ctx->opendevs = newnode;
     return AnError_SUCCESS;
 }
 
-int AnDevice_GetCount(AnCtx *ctx)
+static AnError part_open_device(AnCtx *ctx, AnDeviceInfo *info,
+                                AnDevice **devout)
 {
-    return ctx->ndevs;
-}
-
-AnDevice *AnDevice_Get(AnCtx *ctx, int i)
-{
-    if (0 <= i && i < ctx->ndevs)
-        return ctx->devs[i];
-
-    An_LOG(ctx, AnLog_ERROR, "index out of range");
-    return NULL;
-}
-
-void AnDevice_Info(AnDevice *dev, uint16_t *vid, uint16_t *pid,
-                   const char **serial)
-{
-    if (vid) *vid = dev->vid;
-    if (pid) *pid = dev->pid;
-    if (serial) *serial = dev->serial;
-}
-
-int AnDevice_State(AnDevice *dev)
-{
-    return dev->state;
-}
-
-AnError AnDevice_Open(AnCtx *ctx, AnDevice *dev)
-{
-    if (dev->state != AnDeviceState_IDLE) {
-        An_LOG(ctx, AnLog_ERROR, "cannot open AnDevice: not in state IDLE");
-        return AnError_WRONGSTATE;
+    AnDevice *dev = malloc(sizeof *dev);
+    if (!dev) {
+        An_LOG(ctx, AnLog_ERROR, "malloc AnDevice failed: %s", strerror(errno));
+        return AnError_MALLOCFAILED;
     }
 
-    An_LOG(ctx, AnLog_INFO, "open device: vid 0x%04x pid 0x%04x serial %s",
-           dev->vid, dev->pid, dev->serial);
-
-    struct libusb_device_descriptor devdes;
-    int err = An__ERRORDISCONNECT(ctx, dev,
-                                 libusb_get_device_descriptor(dev->dev, &devdes));
-    if (err)
-        return err;
-
-    if (devdes.bNumConfigurations < 1) {
-        An_LOG(ctx, AnLog_ERROR, " device reports no available configuration");
+    libusb_device_handle *udevh;
+    int err = libusb_open(info->udev, &udevh);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_open failed: %s",
+               libusb_strerror(err));
+        free(dev);
         return AnError_LIBUSB;
     }
 
-    An_LOG(ctx, AnLog_INFO, " unconfigure (set configuration -1)");
-    int invalperr;
-    err = An__ERRORDISCONNECT(ctx, dev, invalperr = libusb_set_configuration(dev->devh, -1));
-    if (invalperr == LIBUSB_ERROR_INVALID_PARAM)
-        An_LOG(ctx, AnLog_INFO, " this is probably OK");
+    dev->info = *info;
+    dev->udevh = udevh;
 
-    An_LOG(ctx, AnLog_INFO, " set configuration 1");
-    err = An__ERRORDISCONNECT(ctx, dev, libusb_set_configuration(dev->devh, 1));
-    if (err)
+    err = part_configure_device(ctx, dev);
+    if (err) {
+        libusb_close(udevh);
+        free(dev);
         return err;
+    }
 
-    err = An__ERRORDISCONNECT(ctx, dev, libusb_claim_interface(dev->devh, 0));
-    if (err)
-        return err;
-
-    dev->state = AnDeviceState_OPEN;
+    *devout = dev;
     return AnError_SUCCESS;
 }
 
-void AnDevice_Free(AnDevice *dev)
+static AnError part_configure_device(AnCtx *ctx, AnDevice *dev)
 {
-    if (dev->devh)
-        libusb_close(dev->devh);
+    An_LOG(ctx, AnLog_DEBUG, "set configuration -1 to reset state");
+    int err = libusb_set_configuration(dev->udevh, -1);
+    if (err)
+        An_LOG(ctx, AnLog_WARN,
+               "libusb_set_configuration(-1) failed (not fatal): %s",
+               libusb_strerror(err));
+
+    An_LOG(ctx, AnLog_DEBUG, "set configuration 1");
+    err = libusb_set_configuration(dev->udevh, 1);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_set_configuration(1): %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
+    }
+
+    An_LOG(ctx, AnLog_DEBUG, "claim interface 0");
+    err = libusb_claim_interface(dev->udevh, 0);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_claim_interface(0): %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
+    }
+
+    return part_get_cfgdes(ctx, dev);
+}
+
+static AnError part_get_cfgdes(AnCtx *ctx, AnDevice *dev)
+{
+    struct libusb_config_descriptor *cfgdes;
+    int err = libusb_get_active_config_descriptor(dev->info.udev, &cfgdes);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_active_config_descriptor: %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
+    }
+
+    dev->cfgdes = cfgdes;
+
+    err = part_get_magic(ctx, dev);
+    if (err) {
+        libusb_free_config_descriptor(cfgdes);
+        return err;
+    }
+
+    return AnError_SUCCESS;
+}
+
+static AnError part_get_magic(AnCtx *ctx, AnDevice *dev)
+{
+    if (dev->cfgdes->bNumInterfaces < 1 ||
+        dev->cfgdes->interface[0].num_altsetting < 1) {
+        An_LOG(ctx, AnLog_ERROR, "device has no interfaces!");
+        return AnError_LIBUSB;
+    }
+
+    struct libusb_interface_descriptor intdes = (
+        dev->cfgdes->interface[0].altsetting[0]
+    );
+
+    if (!intdes.iInterface) {
+        An_LOG(ctx, AnLog_ERROR, "device has no interface string descriptor");
+        return AnError_LIBUSB;
+    }
+
+    int err = libusb_get_string_descriptor_ascii(
+        dev->udevh, intdes.iInterface, (unsigned char *)dev->magic,
+        sizeof dev->magic - 1
+    );
+    if (err < 0) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_string_descriptor_ascii: %s",
+               libusb_strerror(err));
+        return AnError_LIBUSB;
+    }
+    dev->magic[sizeof dev->magic - 1] = '\0';
+    An_LOG(ctx, AnLog_INFO, "magic: %s", dev->magic);
+
+    return part_parse_magic(ctx, dev);
+}
+
+static AnError part_parse_magic(AnCtx *ctx, AnDevice *dev)
+{
+    uint8_t epo, epi;
+    const char *misc;
+
+    if (!parse_magic(dev->magic, &epo, &epi, &misc)) {
+        An_LOG(ctx, AnLog_ERROR, "invalid magic");
+        return AnError_LIBUSB;
+    }
+
+    if (epo & 0x80 || ~epi & 0x80) {
+        An_LOG(ctx, AnLog_ERROR, "invalid endpoint direction");
+        return AnError_LIBUSB;
+    }
+
+    An_LOG(ctx, AnLog_DEBUG, "base protocol endpoints: OUT 0x%02x IN 0x%02x",
+           epo, epi);
+
+    dev->epo = epo;
+    dev->epi = epi;
+    return AnError_SUCCESS;
+}
+
+AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
+{
+    An_LOG(ctx, AnLog_INFO,
+           "open device: bus %03d addr %03d vid 0x%04x pid 0x%04x",
+           info->bus, info->addr, info->devdes.idVendor,
+           info->devdes.idProduct);
+    return part_alloc_node(ctx, info, devout);
+}
+
+void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
+{
+    An_LOG(ctx, AnLog_INFO,
+           "close device: bus %03d addr %03d vid 0x%04x pid 0x%04x",
+           dev->info.bus, dev->info.addr, dev->info.devdes.idVendor,
+           dev->info.devdes.idProduct);
+    AnCtxDevList *prev = NULL,
+                 *cur = ctx->opendevs;
+    while (cur) {
+        if (cur->dev == dev) {
+            AnDevice_InternalClose(ctx, cur->dev);
+            if (prev)
+                prev->next = cur->next;
+            else
+                ctx->opendevs = cur->next;
+            free(cur);
+            return;
+        }
+        prev = cur;
+        cur = cur->next;
+    }
+    An_LOG(ctx, AnLog_ERROR, "device %p not found in ctx->opendevs", dev);
+}
+
+void AnDevice_InternalClose(AnCtx *ctx, AnDevice *dev)
+{
+    An_LOG(ctx, AnLog_DEBUG, "close USB handle for device %p", dev);
+    libusb_free_config_descriptor(dev->cfgdes);
+    /* Final deref on dev->info.udev */
+    libusb_close(dev->udevh);
     free(dev);
 }
 
-AnError AnDevice_Close(AnCtx *ctx, AnDevice *dev)
+static bool parse_magic(const char *magic, uint8_t *outep, uint8_t *inep,
+                        const char **misc)
 {
-    An_LOG(ctx, AnLog_INFO, "close device: vid 0x%04x pid 0x%04x serial %s", dev->vid,
-           dev->pid, dev->serial);
-    if (dev->state != AnDeviceState_OPEN) {
-        An_LOG(ctx, AnLog_ERROR, "cannot close AnDevice: not in state OPEN");
-        return AnError_WRONGSTATE;
-    }
+    /* Magic form as regex: io\.antumbra\.glowapi/([0-9a-fA-F]{2}/){2}.* */
 
-    return An__ERRORDISCONNECT(ctx, dev, libusb_release_interface(dev->devh, 0));
+    static const char prefix[] = "io.antumbra.glowapi/";
+    if (strstr(magic, prefix) != magic)
+        return false;
+
+    const char *endpoints = magic + strlen(prefix);
+    static const char hexd[] = "0123456789abcdefABCDEF";
+    if (!(strchr(hexd, endpoints[0]) && strchr(hexd, endpoints[1]) &&
+          endpoints[2] == '/' &&
+          strchr(hexd, endpoints[3]) && strchr(hexd, endpoints[4]) &&
+          endpoints[5] == '/'))
+        return false;
+
+    char outepstr[3], inepstr[3];
+    memcpy(outepstr, endpoints, 2);
+    memcpy(inepstr, endpoints + 3, 2);
+    outepstr[2] = '\0';
+    inepstr[2] = '\0';
+
+    *outep = strtol(outepstr, NULL, 16),
+    *inep = strtol(inepstr, NULL, 16);
+    *misc = endpoints + 6;
+    return true;
 }
 
-int AnDevice__ErrorDisconnect(AnCtx *ctx, AnDevice *dev, int err, const char *logexpr)
+static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
+                             libusb_device *udev)
 {
-    if (err >= 0)
-        return AnError_SUCCESS;
-
-    An_LOG(ctx, AnLog_ERROR, "%s: %s", logexpr, libusb_strerror(err));
-
-    if (err == LIBUSB_ERROR_NO_DEVICE) {
-        An_LOG(ctx, AnLog_ERROR, " set device to state DEAD");
-        if (dev->devh)
-            libusb_close(dev->devh);
-        dev->state = AnDeviceState_DEAD;
-        dev->dev = NULL;
-        dev->devh = NULL;
-        return AnError_DISCONNECTED;
+    int err = libusb_get_device_descriptor(udev, &info->devdes);
+    if (err) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_device_descriptor: %s",
+               libusb_strerror(err));
+        return err;
     }
 
-    return AnError_LIBUSB;
+    info->bus = libusb_get_bus_number(udev);
+    info->addr = libusb_get_device_address(udev);
+    info->udev = udev;
+    return AnError_SUCCESS;
 }
 
-AnError AnDevice_SetRGB_S(AnCtx *ctx, AnDevice *dev,
-                          uint8_t r, uint8_t g, uint8_t b)
+AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs, size_t *outndevs)
 {
-    if (dev->state != AnDeviceState_OPEN) {
-        An_LOG(ctx, AnLog_ERROR, "not in state OPEN");
-        return AnError_WRONGSTATE;
+    An_LOG(ctx, AnLog_DEBUG, "enumerate devices...");
+
+    libusb_device **udevs;
+    ssize_t ndevs = libusb_get_device_list(ctx->uctx, &udevs);
+    if (ndevs < 0) {
+        An_LOG(ctx, AnLog_ERROR, "libusb_get_device_list: %s",
+               libusb_strerror(ndevs));
+        return AnError_LIBUSB;
     }
 
-    uint8_t outpkt[8];
-    memset(outpkt, 0, sizeof outpkt);
-    outpkt[0] = r;
-    outpkt[1] = g;
-    outpkt[2] = b;
+    AnDeviceInfo **devs = malloc((ndevs + 1) * sizeof *devs);
+    if (!devs) {
+        An_LOG(ctx, AnLog_ERROR, "malloc: %s", strerror(errno));
+        return AnError_MALLOCFAILED;
+    }
+    memset(devs, 0, (ndevs + 1) * sizeof *devs);
 
-    An_LOG(ctx, AnLog_DEBUG, "set RGB: 0x%02x 0x%02x 0x%02x", r, g, b);
+    size_t j = 0;
+    for (ssize_t i = 0; i < ndevs; ++i) {
+        libusb_device *udev = udevs[i];
+        AnDeviceInfo info;
 
-    int xout;
-    return An__ERRORDISCONNECT(
-        ctx, dev, libusb_bulk_transfer(dev->devh, 0x01, (unsigned char *)outpkt,
-                                       sizeof outpkt, &xout, 1000)
-    );
+        An_LOG(ctx, AnLog_DEBUG, "device: bus %03d addr %03d",
+               libusb_get_bus_number(udev), libusb_get_device_address(udev));
+
+        if (populate_info(ctx, &info, udev))
+            continue;
+
+        An_LOG(ctx, AnLog_DEBUG, "vid 0x%04x pid 0x%04x",
+               info.devdes.idVendor, info.devdes.idProduct);
+
+        if (!(info.devdes.idVendor == 0x03eb &&
+              info.devdes.idProduct == 0x2040)) {
+            An_LOG(ctx, AnLog_DEBUG, "  does not match Antumbra VID/PID");
+            continue;
+        }
+
+        devs[j] = malloc(sizeof *devs[j]);
+        if (!devs[j]) {
+            An_LOG(ctx, AnLog_ERROR, "malloc: %s", strerror(errno));
+            continue;
+        }
+
+        libusb_ref_device(udev);
+        *devs[j] = info;
+        ++j;
+    }
+
+    libusb_free_device_list(udevs, 1);
+    *outdevs = devs;
+    *outndevs = j;
+    return AnError_SUCCESS;
+}
+
+void AnDevice_FreeList(AnDeviceInfo **devs)
+{
+    for (size_t i = 0; devs[i]; ++i) {
+        libusb_unref_device(devs[i]->udev);
+        free(devs[i]);
+    }
+    free(devs);
 }

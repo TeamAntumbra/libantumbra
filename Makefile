@@ -2,7 +2,7 @@ CFLAGS := -Wall -std=gnu99 $(addcflags)
 LDFLAGS :=
 LDLIBS :=
 
-objs = device.o error.o ctx.o log.o
+objs = device.o error.o ctx.o log.o cmd.o
 
 rm_files = *.a *.o
 
@@ -30,14 +30,14 @@ rm_files += *.exe *.dll
 %.dll %.exe:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: libantumbra.dll test.exe
+all: libantumbra.dll antumbratool.exe
 
 libantumbra.dll: LDFLAGS += -shared -Wl,--out-implib=$@.a
 libantumbra.dll: LDLIBS += -Llibusb -lusb-1.0
 libantumbra.dll: $(objs)
 
-test.exe: LDLIBS += -lm -L. -lantumbra
-test.exe: test.o hsv.o
+antumbratool.exe: LDLIBS += -lm -L. -lantumbra
+antumbratool.exe: antumbratool.o hsv.o
 
 else ifeq ($(os),linux)
 
@@ -46,14 +46,14 @@ AR = ar
 LD = gcc
 CFLAGS += $(shell pkg-config libusb-1.0 --cflags)
 
-rm_files += test *.so
+rm_files += antumbratool *.so
 
 %.so:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-test:
+antumbratool:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: libantumbra.so test
+all: libantumbra.so antumbratool
 
 libantumbra.a: CFLAGS += -fPIC
 
@@ -62,8 +62,8 @@ libantumbra.so: LDFLAGS += -shared -fPIC
 libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.so: $(objs)
 
-test: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs)
-test: test.o hsv.o libantumbra.a
+antumbratool: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs) -L. -lantumbra
+antumbratool: antumbratool.o hsv.o
 
 else ifeq ($(os),darwin)
 
@@ -72,14 +72,14 @@ AR = ar
 LD = gcc
 CFLAGS += -Ilibusb
 
-rm_files += test *.dylib *.framework *.zip libusb/libusb-special.dylib
+rm_files += antumbratool *.dylib *.framework *.zip libusb/libusb-special.dylib
 
 %.dylib:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-test:
+antumbratool:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: libantumbra.dylib test libantumbra.framework libantumbra.framework.zip
+all: libantumbra.dylib antumbratool libantumbra.framework libantumbra.framework.zip
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
 libantumbra.dylib: LDLIBS += -Llibusb -lusb-special
@@ -101,8 +101,8 @@ libusb/libusb-special.dylib: libusb/libusb.dylib
 	chmod u+w $@
 	install_name_tool -id libusb-DUMMY-NAME $@
 
-test: LDLIBS += -lm -lusb-1.0
-test: test.o hsv.o libantumbra.a
+antumbratool: LDLIBS += -lm -lusb-1.0
+antumbratool: antumbratool.o hsv.o libantumbra.a
 
 libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 	mkdir $@ $@/Headers $@/Resources
