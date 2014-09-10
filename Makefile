@@ -101,10 +101,10 @@ libusb/libusb-special.dylib: libusb/libusb.dylib
 	chmod u+w $@
 	install_name_tool -id libusb-DUMMY-NAME $@
 
-antumbratool: LDLIBS += -lm -lusb-1.0
-antumbratool: antumbratool.o hsv.o libantumbra.a
+antumbratool: LDLIBS += -lm -L. -lantumbra
+antumbratool: antumbratool.o hsv.o
 
-libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
+libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib antumbratool
 	mkdir $@ $@/Headers $@/Resources
 
 	cp libantumbra.dylib $@/libantumbra
@@ -118,6 +118,9 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib
 # this, but it's best not to leave dummy names lying around. Someone might step
 # on them.
 	install_name_tool -id @loader_path/libusb.dylib $@/libusb.dylib
+
+	cp antumbratool $@/antumbratool
+	install_name_tool -change libantumbra.dylib @loader_path/libantumbra $@/antumbratool
 
 	cp libantumbra.h $@/Headers/libantumbra.h
 	cp Info.plist $@/Resources/Info.plist
