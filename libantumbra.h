@@ -22,6 +22,8 @@
 #define AnError_WRONGSTATE 4
 /* Index or size out of range. */
 #define AnError_OUTOFRANGE 5
+/* Protocol command not supported. */
+#define AnError_UNSUPPORTED 6
 
 /* Error value. Zero is success, nonzero is flaming death. */
 typedef int AnError;

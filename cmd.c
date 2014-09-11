@@ -117,5 +117,5 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
         *status = fixbuf[0];
     if (rspdata)
         memcpy(rspdata, fixbuf + 8, rspdata_sz);
-    return AnError_SUCCESS;
+    return fixbuf[0] == 0x01 ? AnError_UNSUPPORTED : AnError_SUCCESS;
 }
