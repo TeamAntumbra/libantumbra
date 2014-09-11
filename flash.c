@@ -30,8 +30,11 @@ static AnError read_page(AnCtx *ctx, AnDevice *dev,
                                  &rdst, 1);
     if (err)
         return err;
-    if (rdst)
+    if (rdst) {
+        An_LOG(ctx, AnLog_ERROR, "Flash API error 0x%02x",
+               (unsigned int)rdst);
         return AnError_CMDFAILURE;
+    }
     return AnError_SUCCESS;
 }
 
@@ -49,8 +52,11 @@ static AnError write_page(AnCtx *ctx, AnDevice *dev,
                                  &rdst, 1);
     if (err)
         return err;
-    if (rdst)
+    if (rdst) {
+        An_LOG(ctx, AnLog_ERROR, "Flash API error 0x%02x",
+               (unsigned int)rdst);
         return AnError_CMDFAILURE;
+    }
     return AnError_SUCCESS;
 }
 
@@ -70,8 +76,11 @@ static AnError read_buffer(AnCtx *ctx, AnDevice *dev,
                                  rsp, sizeof rsp);
     if (err)
         return err;
-    if (rsp[0])
+    if (rsp[0]) {
+        An_LOG(ctx, AnLog_ERROR, "Flash API error 0x%02x",
+               (unsigned int)rsp[0]);
         return AnError_CMDFAILURE;
+    }
 
     memcpy(out, rsp + 8, len);
     return AnError_SUCCESS;
@@ -94,8 +103,11 @@ static AnError write_buffer(AnCtx *ctx, AnDevice *dev,
                                  &rspst, 1);
     if (err)
         return err;
-    if (rspst)
+    if (rspst) {
+        An_LOG(ctx, AnLog_ERROR, "Flash API error 0x%02x",
+               (unsigned int)rspst);
         return AnError_CMDFAILURE;
+    }
 
     return AnError_SUCCESS;
 }
