@@ -113,6 +113,10 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
     if (err)
         return err;
 
+    if (fixbuf[0])
+        An_LOG(ctx, AnLog_ERROR, "error status: 0x%02x",
+               (unsigned int)fixbuf[0]);
+
     if (rspdata)
         memcpy(rspdata, fixbuf + 8, rspdata_sz);
     return fixbuf[0] == 0x01 ? AnError_UNSUPPORTED : AnError_SUCCESS;
