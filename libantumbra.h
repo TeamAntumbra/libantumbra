@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef ANTUMBRA_WINDOWS
 #define An_DLL __cdecl __declspec(dllexport)
@@ -120,5 +121,12 @@ An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
                               const void *cmddata, unsigned int cmddata_sz,
                               uint8_t *status,
                               void *rspdata, unsigned int rspdata_sz);
+
+#define AnCore_API 0x00000000
+
+#define AnCore_CMD_ASK 0x0001
+
+An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
+                            uint32_t api, bool *supp);
 
 #endif

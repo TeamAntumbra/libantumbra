@@ -2,7 +2,8 @@ CFLAGS := -Wall -std=gnu99 $(addcflags)
 LDFLAGS :=
 LDLIBS :=
 
-objs = device.o error.o ctx.o log.o cmd.o
+objs = device.o error.o ctx.o log.o cmd.o \
+	core.o
 
 rm_files = *.a *.o
 
