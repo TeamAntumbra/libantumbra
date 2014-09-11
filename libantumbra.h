@@ -25,6 +25,8 @@
 #define AnError_OUTOFRANGE 5
 /* Protocol command not supported. */
 #define AnError_UNSUPPORTED 6
+/* Protocol command failed (whatever that may mean). */
+#define AnError_CMDFAILURE 7
 
 /* Error value. Zero is success, nonzero is flaming death. */
 typedef int AnError;

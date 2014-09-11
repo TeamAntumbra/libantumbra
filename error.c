@@ -9,7 +9,8 @@ static const char *err_strings[] = {
     [AnError_LIBUSB] = "libusb error",
     [AnError_WRONGSTATE] = "Device in wrong state for operation",
     [AnError_OUTOFRANGE] = "Value out of range",
-    [AnError_UNSUPPORTED] = "Command unsupported"
+    [AnError_UNSUPPORTED] = "Command unsupported",
+    [AnError_CMDFAILURE] = "Command failure",
 };
 
 const char *AnError_String(AnError e)
