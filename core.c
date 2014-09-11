@@ -7,11 +7,10 @@ AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                          api >> 16 & 0xff,
                          api >> 8 & 0xff,
                          api & 0xff};
-    uint8_t status, supbyte;
+    uint8_t supbyte;
     AnError err = AnCmd_Invoke_S(ctx, dev,
                                  AnCore_API, AnCore_CMD_ASK,
                                  apienc, sizeof apienc,
-                                 &status,
                                  &supbyte, 1);
     if (!err)
         *supp = supbyte != 0;

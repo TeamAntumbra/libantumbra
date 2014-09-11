@@ -79,7 +79,7 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz)
 
 AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
                        const void *cmddata, unsigned int cmddata_sz,
-                       uint8_t *status, void *rspdata, unsigned int rspdata_sz)
+                       void *rspdata, unsigned int rspdata_sz)
 {
     An_LOG(ctx, AnLog_DEBUG,
            "send command: api 0x%08x cmd 0x%04hx cmdlen %d rsplen %d",
@@ -113,8 +113,6 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
     if (err)
         return err;
 
-    if (status)
-        *status = fixbuf[0];
     if (rspdata)
         memcpy(rspdata, fixbuf + 8, rspdata_sz);
     return fixbuf[0] == 0x01 ? AnError_UNSUPPORTED : AnError_SUCCESS;

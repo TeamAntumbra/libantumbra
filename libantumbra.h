@@ -113,13 +113,10 @@ An_DLL AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf,
    NULL in this case.
 
    If `rspdata_sz` is 0, the response payload is discarded. `rspdata` may be
-   NULL in this case.
-
-   If `status` is NULL, the response status is discarded. */
+   NULL in this case. */
 An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
                               uint32_t api, uint16_t cmd,
                               const void *cmddata, unsigned int cmddata_sz,
-                              uint8_t *status,
                               void *rspdata, unsigned int rspdata_sz);
 
 #define AnCore_API 0x00000000
