@@ -131,6 +131,10 @@ An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
 #define AnFlash_API 0x00000003
 
 #define AnFlash_CMD_INFO 0x0000
+#define AnFlash_CMD_BUFREAD 0x0001
+#define AnFlash_CMD_BUFWRITE 0x0002
+#define AnFlash_CMD_PAGEREAD 0x0003
+#define AnFlash_CMD_PAGEWRITE 0x0004
 
 typedef struct {
     uint16_t pagesize;
@@ -138,5 +142,13 @@ typedef struct {
 } AnFlashInfo;
 
 An_DLL AnError AnFlash_Info_S(AnCtx *ctx, AnDevice *dev, AnFlashInfo *info);
+
+An_DLL AnError AnFlash_ReadPage_S(AnCtx *ctx, AnDevice *dev,
+                                  AnFlashInfo *info,
+                                  uint32_t pageidx, uint8_t *page);
+
+An_DLL AnError AnFlash_WritePage_S(AnCtx *ctx, AnDevice *dev,
+                                   AnFlashInfo *info,
+                                   uint32_t pageidx, const uint8_t *page);
 
 #endif
