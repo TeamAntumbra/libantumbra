@@ -259,27 +259,3 @@ int main(int argc, char **argv)
     dispatch_cmd(argv[optind], argc - optind - 1, argv + optind + 1);
     return 0;
 }
-
-/*     if (AnCtx_Init(&ctx)) { */
-/*         fputs("ctx init failed\n", stderr); */
-/*         return 1; */
-/*     } */
-/*     AnLog_SetLogging(ctx, loglvl, stderr); */
-
-/*     size_t ndevs; */
-/*     AnDeviceInfo **devs; */
-/*     if (AnDevice_GetList(ctx, &devs, &ndevs)) */
-/*         return 1; */
-
-/*     if (ndevs) { */
-/*         fputs("device(s) found; acting on first\n", stdout); */
-
-/*         devfn(ctx, devs[0]); */
-/*     } */
-/*     else */
-/*         fputs("no devices found; doing nothing\n", stderr); */
-
-/*     AnDevice_FreeList(devs); */
-/*     AnCtx_Deinit(ctx); */
-/*     return 0; */
-/* } */
