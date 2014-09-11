@@ -1,0 +1,44 @@
+Usage: antumbratool [-h] [-d <devicenum>] [-v] <command> ...
+
+Options:
+
+  -h|--help
+    Print this message.
+
+  -d|--device <devicenum>
+    Perform operation on this device (default first found).
+
+  -v|--verbose
+    Increase debug level. In ascending order of verbosity, levels are: error,
+    warning (default), info, debug. Specify this option multiple times to
+    increase by that many levels. Messages are logged to stderr. See also -q.
+
+  -q|--quiet
+    Suppress all debug messages. See also -v.
+
+Commands:
+
+  list
+    List available devices.
+
+  flash-read [outfile]
+    Dump flash contents as raw binary. Output goes to outfile if specified,
+    otherwise to standard output.
+
+  flash-write [infile]
+    Write raw binary to flash. Input is from infile if specified, otherwise
+    from standard input.
+
+  eeprom-read [outfile]
+    Dump EEPROM contents as raw binary. Output goes to outfile if specified,
+    otherwise to standard output.
+
+  eeprom-write [infile]
+    Write raw binary to EEPROM. Input is from infile if specified, otherwise
+    from standard input.
+
+  boot-set main|loader
+    Persistently set device boot target. If 'loader', device will enter
+    bootloader at power on. If 'main', device will enter main application.
+    Hardware overrides (e.g. button or shortable PCB pads) may take precedence
+    over this setting.

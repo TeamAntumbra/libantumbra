@@ -5,7 +5,7 @@ LDLIBS :=
 objs = device.o error.o ctx.o log.o cmd.o \
 	core.o flash.o
 
-rm_files = *.a *.o
+rm_files = *.a *.o usage.c
 
 .PHONY: all
 all: libantumbra.a
@@ -18,6 +18,16 @@ clean:
 	$(AR) rcs $@ $^
 
 libantumbra.a: $(objs)
+
+usage.c: usage.txt
+	( \
+	echo '#include "usage.h"'; \
+	echo 'static const char _usage_msg[] = {'; \
+	xxd -i < $< || exit $$?; \
+	echo ', 0x00'; \
+	echo '};'; \
+	echo 'const char *usage_msg = _usage_msg;'; \
+	) > $@
 
 ifeq ($(os),win32)
 
@@ -38,7 +48,7 @@ libantumbra.dll: LDLIBS += -Llibusb -lusb-1.0
 libantumbra.dll: $(objs)
 
 antumbratool.exe: LDLIBS += -lm -L. -lantumbra
-antumbratool.exe: antumbratool.o hsv.o
+antumbratool.exe: antumbratool.o hsv.o usage.o
 
 else ifeq ($(os),linux)
 
@@ -64,7 +74,7 @@ libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.so: $(objs)
 
 antumbratool: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs) -L. -lantumbra
-antumbratool: antumbratool.o hsv.o
+antumbratool: antumbratool.o hsv.o usage.o
 
 else ifeq ($(os),darwin)
 
@@ -103,7 +113,7 @@ libusb/libusb-special.dylib: libusb/libusb.dylib
 	install_name_tool -id libusb-DUMMY-NAME $@
 
 antumbratool: LDLIBS += -lm -L. -lantumbra
-antumbratool: antumbratool.o hsv.o
+antumbratool: antumbratool.o hsv.o usage.o
 
 libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib antumbratool
 	mkdir $@ $@/Headers $@/Resources
