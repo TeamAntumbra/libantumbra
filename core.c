@@ -1,7 +1,7 @@
 #include "libantumbra.h"
 
-An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
-                            uint32_t api, bool *supp)
+AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
+                     uint32_t api, bool *supp)
 {
     uint8_t apienc[4] = {api >> 24,
                          api >> 16 & 0xff,
