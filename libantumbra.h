@@ -126,4 +126,15 @@ An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
 An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                             uint32_t api, bool *supp);
 
+#define AnFlash_API 0x00000003
+
+#define AnFlash_CMD_INFO 0x0000
+
+typedef struct {
+    uint16_t pagesize;
+    uint32_t numpages;
+} AnFlashInfo;
+
+An_DLL AnError AnFlash_Info_S(AnCtx *ctx, AnDevice *dev, AnFlashInfo *info);
+
 #endif
