@@ -120,6 +120,35 @@ static void write_all_file(const uint8_t *buf, size_t len, FILE *f)
     }
 }
 
+static uint8_t *read_eeprom(AnDevice *dev, AnEepromInfo *info)
+{
+    uint8_t *eeprom = malloc(info->size);
+    if (!eeprom) {
+        An_LOG(ctx, AnLog_ERROR, "malloc failed");
+        exit(1);
+    }
+
+    for (uint16_t off = 0; off < info->size; off += 48) {
+        uint8_t len = (info->size - off < 48 ?
+                       info->size - off : 48);
+        if (AnEeprom_Read_S(ctx, dev, info, off, len, eeprom + off))
+            exit(1);
+    }
+
+    return eeprom;
+}
+
+static void write_eeprom(AnDevice *dev, AnEepromInfo *info,
+                         const uint8_t *eeprom, uint16_t size)
+{
+    for (uint16_t off = 0; off < size; off += 48) {
+        uint8_t len = (size - off < 48 ?
+                       size - off : 48);
+        if (AnEeprom_Write_S(ctx, dev, info, off, len, eeprom + off))
+            exit(1);
+    }
+}
+
 static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
 {
     if (AnCtx_Init(&ctx)) {
@@ -202,6 +231,74 @@ static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
         size_t flen;
         uint8_t *allfile = read_all_file(inf, &flen);
         write_all_flash(dev, &flinfo, allfile, flen);
+        free(allfile);
+
+        if (inf != stdout)
+            fclose(inf);
+        AnDevice_Close(ctx, dev);
+    }
+
+    else if (!strcmp(cmd, "eeprom-read")) {
+        FILE *outf = stdout;
+        if (cmdargc) {
+            outf = fopen(cmdargv[0], "wb");
+            if (!outf) {
+                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
+                exit(1);
+            }
+        }
+
+        if (device_num >= ndevs) {
+            fprintf(stderr, "device %d does not exist\n", device_num);
+            exit(1);
+        }
+
+        AnDevice *dev;
+        AnDevice_Open(ctx, devs[device_num], &dev);
+        AnEepromInfo eeinfo;
+        if (AnEeprom_Info_S(ctx, dev, &eeinfo))
+            exit(1);
+
+        uint8_t *eeprom = read_eeprom(dev, &eeinfo);
+        write_all_file(eeprom, eeinfo.size, outf);
+        free(eeprom);
+
+        if (outf != stdout)
+            fclose(outf);
+        AnDevice_Close(ctx, dev);
+    }
+
+    else if (!strcmp(cmd, "eeprom-write")) {
+        FILE *inf = stdin;
+        if (cmdargc) {
+            inf = fopen(cmdargv[0], "rb");
+            if (!inf) {
+                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
+                exit(1);
+            }
+        }
+
+        if (device_num >= ndevs) {
+            fprintf(stderr, "device %d does not exist\n", device_num);
+            exit(1);
+        }
+
+        AnDevice *dev;
+        AnDevice_Open(ctx, devs[device_num], &dev);
+        AnEepromInfo eeinfo;
+        if (AnEeprom_Info_S(ctx, dev, &eeinfo))
+            exit(1);
+
+        size_t flen;
+        uint8_t *allfile = read_all_file(inf, &flen);
+
+        if (flen > 0xffff) {
+            An_LOG(ctx, AnLog_ERROR, "file exceeds max EEPROM size %d\n",
+                   0xffff);
+            exit(1);
+        }
+
+        write_eeprom(dev, &eeinfo, allfile, flen);
         free(allfile);
 
         if (inf != stdout)
