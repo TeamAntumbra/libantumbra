@@ -157,4 +157,22 @@ An_DLL AnError AnFlash_WritePage_S(AnCtx *ctx, AnDevice *dev,
 
 An_DLL AnError AnBoot_SetForceLoader_S(AnCtx *ctx, AnDevice *dev, bool ldrp);
 
+#define AnEeprom_API 0x00000002
+
+#define AnEeprom_CMD_INFO 0x0000
+#define AnEeprom_CMD_READ 0x0001
+#define AnEeprom_CMD_WRITE 0x0002
+
+typedef struct {
+    uint16_t size;
+} AnEepromInfo;
+
+An_DLL AnError AnEeprom_Info_S(AnCtx *ctx, AnDevice *dev, AnEepromInfo *info);
+
+An_DLL AnError AnEeprom_Read_S(AnCtx *ctx, AnDevice *dev, AnEepromInfo *info,
+                               uint16_t off, uint8_t len, uint8_t *out);
+
+An_DLL AnError AnEeprom_Write_S(AnCtx *ctx, AnDevice *dev, AnEepromInfo *info,
+                                uint16_t off, uint8_t len, const uint8_t *in);
+
 #endif
