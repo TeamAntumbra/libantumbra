@@ -209,6 +209,35 @@ static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
         AnDevice_Close(ctx, dev);
     }
 
+    else if (!strcmp(cmd, "boot-set")) {
+        if (cmdargc != 1) {
+            fputs(usage_msg, stderr);
+            exit(1);
+        }
+
+        bool ldrp;
+        if (!strcmp(cmdargv[0], "main"))
+            ldrp = false;
+        else if (!strcmp(cmdargv[0], "loader"))
+            ldrp = true;
+        else {
+            fputs(usage_msg, stderr);
+            exit(1);
+        }
+
+        if (device_num >= ndevs) {
+            fprintf(stderr, "device %d does not exist\n", device_num);
+            exit(1);
+        }
+
+        AnDevice *dev;
+        AnDevice_Open(ctx, devs[device_num], &dev);
+
+        AnBoot_SetForceLoader_S(ctx, dev, ldrp);
+
+        AnDevice_Close(ctx, dev);
+    }
+
     else {
         fprintf(stderr, "unknown command: %s\n", cmd);
         exit(1);

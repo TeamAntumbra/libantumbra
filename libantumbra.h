@@ -151,4 +151,10 @@ An_DLL AnError AnFlash_WritePage_S(AnCtx *ctx, AnDevice *dev,
                                    AnFlashInfo *info,
                                    uint32_t pageidx, const uint8_t *page);
 
+#define AnBoot_API 0x00000001
+
+#define AnBoot_CMD_SET 0x0000
+
+An_DLL AnError AnBoot_SetForceLoader_S(AnCtx *ctx, AnDevice *dev, bool ldrp);
+
 #endif
