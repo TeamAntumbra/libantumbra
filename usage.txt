@@ -42,3 +42,6 @@ Commands:
     bootloader at power on. If 'main', device will enter main application.
     Hardware overrides (e.g. button or shortable PCB pads) may take precedence
     over this setting.
+
+  reset
+    Perform a hard reset.

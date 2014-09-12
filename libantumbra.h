@@ -124,9 +124,12 @@ An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
 #define AnCore_API 0x00000000
 
 #define AnCore_CMD_ASK 0x0001
+#define AnCore_CMD_RESET 0x0005
 
 An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                             uint32_t api, bool *supp);
+
+An_DLL AnError AnCore_Reset_S(AnCtx *ctx, AnDevice *dev);
 
 #define AnFlash_API 0x00000003
 

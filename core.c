@@ -16,3 +16,9 @@ AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
         *supp = supbyte != 0;
     return err;
 }
+
+AnError AnCore_Reset_S(AnCtx *ctx, AnDevice *dev)
+{
+    return AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_RESET,
+                          NULL, 0, NULL, 0);
+}

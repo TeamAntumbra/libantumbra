@@ -335,6 +335,18 @@ static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
         AnDevice_Close(ctx, dev);
     }
 
+    else if (!strcmp(cmd, "reset")) {
+        if (device_num >= ndevs) {
+            fprintf(stderr, "device %d does not exist\n", device_num);
+            exit(1);
+        }
+
+        AnDevice *dev;
+        AnDevice_Open(ctx, devs[device_num], &dev);
+        AnCore_Reset_S(ctx, dev);
+        AnDevice_Close(ctx, dev);
+    }
+
     else {
         fprintf(stderr, "unknown command: %s\n", cmd);
         exit(1);
