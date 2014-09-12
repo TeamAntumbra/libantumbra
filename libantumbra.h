@@ -178,4 +178,17 @@ An_DLL AnError AnEeprom_Read_S(AnCtx *ctx, AnDevice *dev, AnEepromInfo *info,
 An_DLL AnError AnEeprom_Write_S(AnCtx *ctx, AnDevice *dev, AnEepromInfo *info,
                                 uint16_t off, uint8_t len, const uint8_t *in);
 
+#define AnLight_API 0x00000004
+
+#define AnLight_CMD_GETENDPOINT 0x0000
+
+typedef struct {
+    uint8_t endpoint;
+} AnLightInfo;
+
+An_DLL AnError AnLight_Info_S(AnCtx *ctx, AnDevice *dev, AnLightInfo *info);
+
+An_DLL AnError AnLight_Set_S(AnCtx *ctx, AnDevice *dev, AnLightInfo *info,
+                             uint16_t r, uint16_t g, uint16_t b);
+
 #endif

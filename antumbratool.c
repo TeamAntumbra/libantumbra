@@ -347,6 +347,30 @@ static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
         AnDevice_Close(ctx, dev);
     }
 
+    else if (!strcmp(cmd, "light-set")) {
+        if (cmdargc != 3) {
+            fputs(usage_msg, stderr);
+            exit(1);
+        }
+
+        if (device_num >= ndevs) {
+            fprintf(stderr, "device %d does not exist\n", device_num);
+            exit(1);
+        }
+
+        AnDevice *dev;
+        AnDevice_Open(ctx, devs[device_num], &dev);
+
+        AnLightInfo info;
+        if (AnLight_Info_S(ctx, dev, &info))
+            exit(1);
+
+        AnLight_Set_S(ctx, dev, &info, strtol(cmdargv[0], NULL, 0),
+                      strtol(cmdargv[1], NULL, 0), strtol(cmdargv[2], NULL, 0));
+
+        AnDevice_Close(ctx, dev);
+    }
+
     else {
         fprintf(stderr, "unknown command: %s\n", cmd);
         exit(1);

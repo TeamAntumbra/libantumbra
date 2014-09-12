@@ -45,3 +45,7 @@ Commands:
 
   reset
     Perform a hard reset.
+
+  light-set <r> <g> <b>
+    Set light color. <r> <g> <b> are integer constants (decimal, hexadecimal, or
+    octal) in the range 0-65535 inclusive.
