@@ -81,7 +81,8 @@ else ifeq ($(os),darwin)
 CC = gcc
 AR = ar
 LD = gcc
-CFLAGS += -Ilibusb
+CFLAGS += -Ilibusb -mmacosx-version-min=10.7
+LDFLAGS += -mmacosx-version-min=10.7
 
 rm_files += antumbratool *.dylib *.framework *.zip libusb/libusb-special.dylib
 
