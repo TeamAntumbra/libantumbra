@@ -149,231 +149,220 @@ static void write_eeprom(AnDevice *dev, AnEepromInfo *info,
     }
 }
 
-static void dispatch_cmd(char *cmd, int cmdargc, char **cmdargv)
+static FILE *try_open(const char *name, const char *mode)
 {
-    if (AnCtx_Init(&ctx)) {
-        fputs("AnCtx init failed\n", stderr);
+    FILE *f = fopen(name, mode);
+    if (!f) {
+        fprintf(stderr, "%s: %s\n", name, strerror(errno));
         exit(1);
     }
-    AnLog_SetLogging(ctx, log_level, stderr);
+    return f;
+}
+
+static void cmd_list(int argc, char **argv, AnDeviceInfo **devs, size_t ndevs)
+{
+    for (int i = 0; i < ndevs; ++i) {
+        uint8_t bus, addr;
+        uint16_t vid, pid;
+        AnDeviceInfo_UsbInfo(devs[i], &bus, &addr, &vid, &pid);
+        printf("%d: bus 0x%02x addr 0x%02x vid 0x%04x pid 0x%04x\n",
+               i, (unsigned int)bus, (unsigned int)addr,
+               (unsigned int)vid, (unsigned int)pid);
+    }
+}
+
+static void cmd_flashread(int argc, char **argv, AnDevice *dev)
+{
+    FILE *outf = argc ? try_open(argv[0], "wb") : stdout;
+
+    AnFlashInfo info;
+    if (AnFlash_Info_S(ctx, dev, &info))
+        exit(1);
+    validate_flash_info(&info);
+
+    uint8_t *flash = read_all_flash(dev, &info);
+    write_all_file(flash, info.pagesize * info.numpages, outf);
+    free(flash);
+
+    if (outf != stdout)
+        fclose(outf);
+}
+
+static void cmd_flashwrite(int argc, char **argv, AnDevice *dev)
+{
+    FILE *inf = argc ? try_open(argv[0], "rb") : stdin;
+
+    AnFlashInfo info;
+    if (AnFlash_Info_S(ctx, dev, &info))
+        exit(1);
+    validate_flash_info(&info);
+
+    size_t size;
+    uint8_t *flash = read_all_file(inf, &size);
+    write_all_flash(dev, &info, flash, size);
+    free(flash);
+
+    if (inf != stdin)
+        fclose(inf);
+}
+
+static void cmd_eepromread(int argc, char **argv, AnDevice *dev)
+{
+    FILE *outf = argc ? try_open(argv[0], "wb") : stdout;
+
+    AnEepromInfo info;
+    if (AnEeprom_Info_S(ctx, dev, &info))
+        exit(1);
+
+    uint8_t *eeprom = read_eeprom(dev, &info);
+    write_all_file(eeprom, info.size, outf);
+    free(eeprom);
+
+    if (outf != stdout)
+        fclose(outf);
+}
+
+static void cmd_eepromwrite(int argc, char **argv, AnDevice *dev)
+{
+    FILE *inf = argc ? try_open(argv[0], "rb") : stdin;
+
+    AnEepromInfo info;
+    if (AnEeprom_Info_S(ctx, dev, &info))
+        exit(1);
+
+    size_t size;
+    uint8_t *eeprom = read_all_file(inf, &size);
+
+    if (size > 0xffff) {
+        An_LOG(ctx, AnLog_ERROR, "file exceeds max EEPROM size %d\n", 0xffff);
+        exit(1);
+    }
+
+    write_eeprom(dev, &info, eeprom, size);
+    free(eeprom);
+
+    if (inf != stdin)
+        fclose(inf);
+}
+
+static void cmd_bootset(int argc, char **argv, AnDevice *dev)
+{
+    bool ldrp;
+    if (!strcmp(argv[0], "main"))
+        ldrp = false;
+    else if (!strcmp(argv[0], "loader"))
+        ldrp = true;
+    else {
+        fputs(usage_msg, stderr);
+        exit(1);
+    }
+
+    if (AnBoot_SetForceLoader_S(ctx, dev, ldrp))
+        exit(1);
+}
+
+static void cmd_reset(int argc, char **argv, AnDevice *dev)
+{
+    if (AnCore_Reset_S(ctx, dev))
+        exit(1);
+}
+
+static void cmd_lightset(int argc, char **argv, AnDevice *dev)
+{
+    AnLightInfo info;
+    if (AnLight_Info_S(ctx, dev, &info))
+        exit(1);
+
+    if (AnLight_Set_S(ctx, dev, &info,
+                      strtol(argv[0], NULL, 0),
+                      strtol(argv[1], NULL, 0),
+                      strtol(argv[2], NULL, 0)))
+        exit(1);
+}
+
+#define CMD_NODEV 0
+#define CMD_LISTONLY 1
+#define CMD_USEDEV 2
+
+typedef void (*call_nodev)(int argc, char **argv);
+typedef void (*call_listonly)(int argc, char **argv, AnDeviceInfo **devs,
+                              size_t ndevs);
+typedef void (*call_usedev)(int argc, char **argv, AnDevice *dev);
+
+struct cmd {
+    const char *name;
+    int type;
+    int argc; /* -1 to ignore argc */
+    void *call;
+};
+
+static const struct cmd commands[] = {
+    {"list", CMD_LISTONLY, 0, &cmd_list},
+    {"flash-read", CMD_USEDEV, -1, &cmd_flashread},
+    {"flash-write", CMD_USEDEV, -1, &cmd_flashwrite},
+    {"eeprom-read", CMD_USEDEV, -1, &cmd_eepromread},
+    {"eeprom-write", CMD_USEDEV, -1, &cmd_eepromwrite},
+    {"boot-set", CMD_USEDEV, 1, &cmd_bootset},
+    {"reset", CMD_USEDEV, 0, &cmd_reset},
+    {"light-set", CMD_USEDEV, 3, &cmd_lightset},
+};
+
+static const struct cmd *match_cmd(const char *name)
+{
+    for (int i = 0; i < sizeof commands / sizeof *commands; ++i) {
+        if (!strcmp(commands[i].name, name))
+            return &commands[i];
+    }
+    return NULL;
+}
+
+static void dispatch_cmd(char *name, int argc, char **argv)
+{
+    const struct cmd *cmd = match_cmd(name);
+    if (!cmd) {
+        fprintf(stderr, "unknown command: %s\n", name);
+        exit(1);
+    }
+
+    if (cmd->argc != -1 && argc != cmd->argc) {
+        fputs(usage_msg, stderr);
+        exit(1);
+    }
 
     size_t ndevs;
     AnDeviceInfo **devs;
-    if (AnDevice_GetList(ctx, &devs, &ndevs))
-        exit(1);
 
-    if (!strcmp(cmd, "list")) {
-        for (int i = 0; i < ndevs; ++i) {
-            uint8_t bus, addr;
-            uint16_t vid, pid;
-            AnDeviceInfo_UsbInfo(devs[i], &bus, &addr, &vid, &pid);
-            printf("%d: bus 0x%02x addr 0x%02x vid 0x%04x pid 0x%04x\n",
-                   i, (unsigned int)bus, (unsigned int)addr,
-                   (unsigned int)vid, (unsigned int)pid);
+    if (cmd->type != CMD_NODEV) {
+        if (AnCtx_Init(&ctx)) {
+            fputs("AnCtx init failed\n", stderr);
+            exit(1);
         }
+        AnLog_SetLogging(ctx, log_level, stderr);
+
+        if (AnDevice_GetList(ctx, &devs, &ndevs))
+            exit(1);
     }
 
-    else if (!strcmp(cmd, "flash-read")) {
-        FILE *outf = stdout;
-        if (cmdargc) {
-            outf = fopen(cmdargv[0], "wb");
-            if (!outf) {
-                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
-                exit(1);
-            }
-        }
+    if (cmd->type == CMD_NODEV)
+        (*(call_nodev)cmd->call)(argc, argv);
+
+    else if (cmd->type == CMD_LISTONLY)
+        (*(call_listonly)cmd->call)(argc, argv, devs, ndevs);
+
+    else if (cmd->type == CMD_USEDEV) {
+        AnDevice *dev;
 
         if (device_num >= ndevs) {
             fprintf(stderr, "device %d does not exist\n", device_num);
             exit(1);
         }
 
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-        AnFlashInfo flinfo;
-        if (AnFlash_Info_S(ctx, dev, &flinfo))
+        if (AnDevice_Open(ctx, devs[device_num], &dev))
             exit(1);
 
-        validate_flash_info(&flinfo);
-
-        uint8_t *flash = read_all_flash(dev, &flinfo);
-        write_all_file(flash, flinfo.pagesize * flinfo.numpages, outf);
-        free(flash);
-
-        if (outf != stdout)
-            fclose(outf);
-        AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "flash-write")) {
-        FILE *inf = stdin;
-        if (cmdargc) {
-            inf = fopen(cmdargv[0], "rb");
-            if (!inf) {
-                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
-                exit(1);
-            }
-        }
-
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-        AnFlashInfo flinfo;
-        if (AnFlash_Info_S(ctx, dev, &flinfo))
-            exit(1);
-
-        validate_flash_info(&flinfo);
-
-        size_t flen;
-        uint8_t *allfile = read_all_file(inf, &flen);
-        write_all_flash(dev, &flinfo, allfile, flen);
-        free(allfile);
-
-        if (inf != stdout)
-            fclose(inf);
-        AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "eeprom-read")) {
-        FILE *outf = stdout;
-        if (cmdargc) {
-            outf = fopen(cmdargv[0], "wb");
-            if (!outf) {
-                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
-                exit(1);
-            }
-        }
-
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-        AnEepromInfo eeinfo;
-        if (AnEeprom_Info_S(ctx, dev, &eeinfo))
-            exit(1);
-
-        uint8_t *eeprom = read_eeprom(dev, &eeinfo);
-        write_all_file(eeprom, eeinfo.size, outf);
-        free(eeprom);
-
-        if (outf != stdout)
-            fclose(outf);
-        AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "eeprom-write")) {
-        FILE *inf = stdin;
-        if (cmdargc) {
-            inf = fopen(cmdargv[0], "rb");
-            if (!inf) {
-                fprintf(stderr, "%s: %s\n", cmdargv[0], strerror(errno));
-                exit(1);
-            }
-        }
-
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-        AnEepromInfo eeinfo;
-        if (AnEeprom_Info_S(ctx, dev, &eeinfo))
-            exit(1);
-
-        size_t flen;
-        uint8_t *allfile = read_all_file(inf, &flen);
-
-        if (flen > 0xffff) {
-            An_LOG(ctx, AnLog_ERROR, "file exceeds max EEPROM size %d\n",
-                   0xffff);
-            exit(1);
-        }
-
-        write_eeprom(dev, &eeinfo, allfile, flen);
-        free(allfile);
-
-        if (inf != stdout)
-            fclose(inf);
-        AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "boot-set")) {
-        if (cmdargc != 1) {
-            fputs(usage_msg, stderr);
-            exit(1);
-        }
-
-        bool ldrp;
-        if (!strcmp(cmdargv[0], "main"))
-            ldrp = false;
-        else if (!strcmp(cmdargv[0], "loader"))
-            ldrp = true;
-        else {
-            fputs(usage_msg, stderr);
-            exit(1);
-        }
-
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-
-        AnBoot_SetForceLoader_S(ctx, dev, ldrp);
+        (*(call_usedev)cmd->call)(argc, argv, dev);
 
         AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "reset")) {
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-        AnCore_Reset_S(ctx, dev);
-        AnDevice_Close(ctx, dev);
-    }
-
-    else if (!strcmp(cmd, "light-set")) {
-        if (cmdargc != 3) {
-            fputs(usage_msg, stderr);
-            exit(1);
-        }
-
-        if (device_num >= ndevs) {
-            fprintf(stderr, "device %d does not exist\n", device_num);
-            exit(1);
-        }
-
-        AnDevice *dev;
-        AnDevice_Open(ctx, devs[device_num], &dev);
-
-        AnLightInfo info;
-        if (AnLight_Info_S(ctx, dev, &info))
-            exit(1);
-
-        AnLight_Set_S(ctx, dev, &info, strtol(cmdargv[0], NULL, 0),
-                      strtol(cmdargv[1], NULL, 0), strtol(cmdargv[2], NULL, 0));
-
-        AnDevice_Close(ctx, dev);
-    }
-
-    else {
-        fprintf(stderr, "unknown command: %s\n", cmd);
-        exit(1);
     }
 
     AnDevice_FreeList(devs);
