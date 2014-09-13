@@ -1,4 +1,4 @@
-Usage: antumbratool [-h] [-d <devicenum>] [-v] <command> ...
+Usage: antumbratool [-h] [-d <devicenum>] [-v] [-q] <command> ...
 
 Options:
 
@@ -9,12 +9,13 @@ Options:
     Perform operation on this device (default first found).
 
   -v|--verbose
-    Increase debug level. In ascending order of verbosity, levels are: error,
-    warning (default), info, debug. Specify this option multiple times to
-    increase by that many levels. Messages are logged to stderr. See also -q.
+    Increase debug level. In ascending order of verbosity, levels are: none,
+    error, warning (default), info, debug. Specify this option multiple times to
+    increase by that many levels. Specify -q -v to select errors only. Messages
+    are logged to stderr. See also -q.
 
   -q|--quiet
-    Suppress all debug messages. See also -v.
+    Suppress all debug messages (i.e. reset debug level to none). See also -v.
 
 Commands:
 
