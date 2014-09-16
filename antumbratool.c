@@ -197,10 +197,22 @@ static void cmd_flashwrite(int argc, char **argv, AnDevice *dev)
         exit(1);
     validate_flash_info(&info);
 
-    size_t size;
-    uint8_t *flash = read_all_file(inf, &size);
-    write_all_flash(dev, &info, flash, size);
-    free(flash);
+    size_t wsize;
+    uint8_t *wflash = read_all_file(inf, &wsize);
+    write_all_flash(dev, &info, wflash, wsize);
+
+    uint8_t *rflash = read_all_flash(dev, &info);
+
+    for (unsigned int i = 0; i < wsize; ++i) {
+        if (wflash[i] != rflash[i]) {
+            An_LOG(ctx, AnLog_ERROR,
+                   "flash verification mismatch at offset 0x%08x", i);
+            exit(1);
+        }
+    }
+
+    free(rflash);
+    free(wflash);
 
     if (inf != stdin)
         fclose(inf);
