@@ -292,6 +292,40 @@ static void cmd_lightset(int argc, char **argv, AnDevice *dev)
         exit(1);
 }
 
+static void cmd_raw(int argc, char **argv, AnDevice *dev)
+{
+    uint8_t outdata[64];
+    uint8_t indata[64];
+
+    memset(outdata, 0, sizeof outdata);
+    int outdataoff = 0;
+    for (int i = 0; i < argc; ++i) {
+        size_t len = strlen(argv[i]);
+        for (int j = 0; j < (len & ~1); j += 2) {
+            char hexbyte[3] = {argv[i][j], argv[i][j+1], 0};
+            char *endp;
+            uint8_t val = strtol(hexbyte, &endp, 16);
+            if (*endp) {
+                An_LOG(ctx, AnLog_ERROR, "invalid hex data");
+                exit(1);
+            }
+            if (outdataoff >= sizeof outdata) {
+                An_LOG(ctx, AnLog_ERROR, "input hex data too long");
+                exit(1);
+            }
+            outdata[outdataoff++] = val;
+        }
+    }
+
+    AnCmd_SendRaw_S(ctx, dev, outdata, sizeof outdata);
+    AnCmd_RecvRaw_S(ctx, dev, indata, sizeof indata);
+
+    char indatastr[129];
+    for (int i = 0; i < sizeof indata; ++i)
+        sprintf(indatastr + 2 * i, "%02x", indata[i]);
+    printf("%s\n", indatastr);
+}
+
 #define CMD_NODEV 0
 #define CMD_LISTONLY 1
 #define CMD_USEDEV 2
@@ -317,6 +351,7 @@ static const struct cmd commands[] = {
     {"boot-set", CMD_USEDEV, 1, &cmd_bootset},
     {"reset", CMD_USEDEV, 0, &cmd_reset},
     {"light-set", CMD_USEDEV, 3, &cmd_lightset},
+    {"raw", CMD_USEDEV, -1, &cmd_raw},
 };
 
 static const struct cmd *match_cmd(const char *name)

@@ -50,3 +50,10 @@ Commands:
   light-set <r> <g> <b>
     Set light color. <r> <g> <b> are integer constants (decimal, hexadecimal, or
     octal) in the range 0-65535 inclusive.
+
+  raw [<hexdata> ...]
+    Send raw packet data and print response. <hexdata> are 0 or more hexadecimal
+    strings whose concatenation represents the 64-byte packet to send. If fewer
+    than 64 bytes are represented, the packet is zero-padded. If an odd number
+    of hex digits are provided, the trailing digit is ignored. The response
+    packet is printed in like format.
