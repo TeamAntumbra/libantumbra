@@ -3,7 +3,7 @@ LDFLAGS :=
 LDLIBS :=
 
 objs = device.o error.o ctx.o log.o cmd.o \
-	core.o flash.o boot.o eeprom.o light.o
+	core.o flash.o boot.o eeprom.o light.o temp.o
 
 rm_files = *.a *.o usage.c
 

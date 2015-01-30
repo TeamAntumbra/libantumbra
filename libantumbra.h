@@ -191,4 +191,26 @@ An_DLL AnError AnLight_Info_S(AnCtx *ctx, AnDevice *dev, AnLightInfo *info);
 An_DLL AnError AnLight_Set_S(AnCtx *ctx, AnDevice *dev, AnLightInfo *info,
                              uint16_t r, uint16_t g, uint16_t b);
 
+#define AnTemp_API 0x00000005
+
+#define AnTemp_CMD_READRAW 0x0000
+#define AnTemp_CMD_READTEMP 0x0001
+#define AnTemp_CMD_READCAL 0x0002
+#define AnTemp_CMD_WRITECAL 0x0003
+
+typedef struct {
+    uint32_t a_sensor;
+    uint32_t a_temp;
+    uint32_t b_sensor;
+    uint32_t b_temp;
+} AnTempCal;
+
+An_DLL AnError AnTemp_ReadRaw_S(AnCtx *ctx, AnDevice *dev, uint32_t *rawout);
+
+An_DLL AnError AnTemp_ReadTemp_S(AnCtx *ctx, AnDevice *dev, uint32_t *tempout);
+
+An_DLL AnError AnTemp_ReadCal_S(AnCtx *ctx, AnDevice *dev, AnTempCal *calout);
+
+An_DLL AnError AnTemp_WriteCal_S(AnCtx *ctx, AnDevice *dev, const AnTempCal *calin);
+
 #endif

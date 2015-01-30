@@ -57,3 +57,20 @@ Commands:
     than 64 bytes are represented, the packet is zero-padded. If an odd number
     of hex digits are provided, the trailing digit is ignored. The response
     packet is printed in like format.
+
+  temp-readraw
+    Read raw (uncalibrated) value from onboard temperature sensor.
+
+  temp-readtemp
+    Read calibrated temperature from onboard sensor.
+
+  temp-readcal
+    Read onboard temperature sensor calibration data.
+
+  temp-writecal <a_sensor> <a_temp> <b_sensor> <b_temp>
+    Write onboard temperature sensor calibration data.
+
+    a_sensor: raw sensor value at calibration point A
+    a_temp: temperature (mK) at calibration point A
+    b_sensor: raw sensor value at calibration point B
+    b_temp: temperatuer (mK) at calibration point B

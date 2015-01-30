@@ -326,6 +326,53 @@ static void cmd_raw(int argc, char **argv, AnDevice *dev)
     printf("%s\n", indatastr);
 }
 
+static void cmd_tempreadraw(int argc, char **argv, AnDevice *dev)
+{
+    uint32_t raw;
+    if (AnTemp_ReadRaw_S(ctx, dev, &raw))
+        exit(1);
+    printf("%u\n", raw);
+}
+
+static void cmd_tempreadtemp(int argc, char **argv, AnDevice *dev)
+{
+    uint32_t temp;
+    if (AnTemp_ReadTemp_S(ctx, dev, &temp))
+        exit(1);
+    printf("%u mK\n", temp);
+}
+
+static void cmd_tempreadcal(int argc, char **argv, AnDevice *dev)
+{
+    AnTempCal cal;
+    if (AnTemp_ReadCal_S(ctx, dev, &cal))
+        exit(1);
+    printf("A: %u = %u mK\nB: %u = %u mK\n", cal.a_sensor, cal.a_temp, cal.b_sensor, cal.b_temp);
+}
+
+static uint32_t parseu32(const char *s)
+{
+    char *endp;
+    uint32_t n = strtol(s, &endp, 0);
+    if (endp == s || *endp) {
+        fprintf(stderr, "invalid integer: %s\n", s);
+        exit(1);
+    }
+    return n;
+}
+
+static void cmd_tempwritecal(int argc, char **argv, AnDevice *dev)
+{
+    AnTempCal cal = {
+        .a_sensor = parseu32(argv[0]),
+        .a_temp = parseu32(argv[1]),
+        .b_sensor = parseu32(argv[2]),
+        .b_temp = parseu32(argv[3]),
+    };
+    if (AnTemp_WriteCal_S(ctx, dev, &cal))
+        exit(1);
+}
+
 #define CMD_NODEV 0
 #define CMD_LISTONLY 1
 #define CMD_USEDEV 2
@@ -352,6 +399,10 @@ static const struct cmd commands[] = {
     {"reset", CMD_USEDEV, 0, &cmd_reset},
     {"light-set", CMD_USEDEV, 3, &cmd_lightset},
     {"raw", CMD_USEDEV, -1, &cmd_raw},
+    {"temp-readraw", CMD_USEDEV, 0, &cmd_tempreadraw},
+    {"temp-readtemp", CMD_USEDEV, 0, &cmd_tempreadtemp},
+    {"temp-readcal", CMD_USEDEV, 0, &cmd_tempreadcal},
+    {"temp-writecal", CMD_USEDEV, 4, &cmd_tempwritecal},
 };
 
 static const struct cmd *match_cmd(const char *name)
