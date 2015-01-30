@@ -5,8 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef ANTUMBRA_WINDOWS
+#ifdef ANTUMBRA_WIN_DLLBUILD
 #define An_DLL __cdecl __declspec(dllexport)
+#elif _WIN32
+#define An_DLL __cdecl __declspec(dllimport)
 #else
 #define An_DLL
 #endif
