@@ -2,10 +2,20 @@
 
 #include <string.h>
 
+static AnError helpfully_invoke_cmd(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
+                                    const void *cmddata, unsigned int cmddata_sz,
+                                    void *rspdata, unsigned int rspdata_sz)
+{
+    AnError err = AnCmd_Invoke_S(ctx, dev, api, cmd, cmddata, cmddata_sz, rspdata, rspdata_sz);
+    if (err == AnError_UNSUPPORTED)
+        An_LOG(ctx, AnLog_ERROR, "Ensure that device bootloader is active.");
+    return err;
+}
+
 AnError AnFlash_Info_S(AnCtx *ctx, AnDevice *dev, AnFlashInfo *info)
 {
     uint8_t rsp[6];
-    AnError err = AnCmd_Invoke_S(ctx, dev,
+    AnError err = helpfully_invoke_cmd(ctx, dev,
                                  AnFlash_API, AnFlash_CMD_INFO,
                                  NULL, 0,
                                  &rsp, sizeof rsp);
@@ -24,7 +34,7 @@ static AnError read_page(AnCtx *ctx, AnDevice *dev,
                       pageidx >> 8 & 0xff,
                       pageidx & 0xff};
     uint8_t rdst;
-    AnError err = AnCmd_Invoke_S(ctx, dev,
+    AnError err = helpfully_invoke_cmd(ctx, dev,
                                  AnFlash_API, AnFlash_CMD_PAGEREAD,
                                  arg, sizeof arg,
                                  &rdst, 1);
@@ -46,7 +56,7 @@ static AnError write_page(AnCtx *ctx, AnDevice *dev,
                       pageidx >> 8 & 0xff,
                       pageidx & 0xff};
     uint8_t rdst;
-    AnError err = AnCmd_Invoke_S(ctx, dev,
+    AnError err = helpfully_invoke_cmd(ctx, dev,
                                  AnFlash_API, AnFlash_CMD_PAGEWRITE,
                                  arg, sizeof arg,
                                  &rdst, 1);
@@ -70,7 +80,7 @@ static AnError read_buffer(AnCtx *ctx, AnDevice *dev,
 
     uint8_t arg[3] = {off >> 8, off & 0xff, len};
     uint8_t rsp[56];
-    AnError err = AnCmd_Invoke_S(ctx, dev,
+    AnError err = helpfully_invoke_cmd(ctx, dev,
                                  AnFlash_API, AnFlash_CMD_BUFREAD,
                                  arg, sizeof arg,
                                  rsp, sizeof rsp);
@@ -97,7 +107,7 @@ static AnError write_buffer(AnCtx *ctx, AnDevice *dev,
     uint8_t arg[56] = {[0] = off >> 8, [1] = off & 0xff, [2] = len};
     memcpy(arg + 8, in, len);
     uint8_t rspst;
-    AnError err = AnCmd_Invoke_S(ctx, dev,
+    AnError err = helpfully_invoke_cmd(ctx, dev,
                                  AnFlash_API, AnFlash_CMD_BUFWRITE,
                                  arg, sizeof arg,
                                  &rspst, 1);
