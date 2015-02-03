@@ -9,7 +9,7 @@ static const char *const sigils[] = {
     [AnLog_INFO] = "I",
     [AnLog_DEBUG] = "D",
 };
-static const char unknown_sigil[] = "??";
+static const char unknown_sigil[] = "?";
 
 void AnLog_Log(AnCtx *ctx, AnLogLevel lvl, const char *fmt, ...)
 {
