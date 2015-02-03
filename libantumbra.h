@@ -44,13 +44,6 @@ An_DLL AnError AnCtx_Init(AnCtx **ctx);
 /* Free resources and destroy context. */
 An_DLL void AnCtx_Deinit(AnCtx *ctx);
 
-/* Disconnected / no longer available. */
-#define AnDeviceState_DEAD 0
-/* Handle open, but no interface in use. */
-#define AnDeviceState_IDLE 1
-/* Open and interface in use. */
-#define AnDeviceState_OPEN 2
-
 typedef struct AnDeviceInfo AnDeviceInfo;
 
 An_DLL void AnDeviceInfo_UsbInfo(AnDeviceInfo *info,
