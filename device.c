@@ -279,6 +279,19 @@ static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
     return AnError_SUCCESS;
 }
 
+static bool match_vid_pid(uint16_t vid, uint16_t pid)
+{
+    static const struct {uint16_t vid; uint16_t pid;} ids[] = {
+        {0x03eb, 0x2040},
+        {0x16d0, 0x0a85},
+    };
+    for (int i = 0; i < sizeof ids / sizeof *ids; ++i) {
+        if (ids[i].vid == vid && ids[i].pid == pid)
+            return true;
+    }
+    return false;
+}
+
 AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs, size_t *outndevs)
 {
     An_LOG(ctx, AnLog_DEBUG, "enumerate devices...");
@@ -312,8 +325,7 @@ AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs, size_t *outndevs)
         An_LOG(ctx, AnLog_DEBUG, "vid 0x%04x pid 0x%04x",
                info.devdes.idVendor, info.devdes.idProduct);
 
-        if (!(info.devdes.idVendor == 0x03eb &&
-              info.devdes.idProduct == 0x2040)) {
+        if (!match_vid_pid(info.devdes.idVendor, info.devdes.idProduct)) {
             An_LOG(ctx, AnLog_DEBUG, "  does not match Antumbra VID/PID");
             continue;
         }
