@@ -29,6 +29,8 @@
 #define AnError_UNSUPPORTED 6
 /* Protocol command failed (whatever that may mean). */
 #define AnError_CMDFAILURE 7
+/* Protocol error of unspecified nature. */
+#define AnError_PROTOERROR 8
 
 /* Error value. Zero is success, nonzero is flaming death. */
 typedef int AnError;

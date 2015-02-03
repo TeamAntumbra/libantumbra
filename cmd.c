@@ -77,6 +77,9 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz)
     return AnError_SUCCESS;
 }
 
+#define STATUS_NOPROTOERR 0
+#define STATUS_UNSUPPORTEDAPICMD 1
+
 AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
                        const void *cmddata, unsigned int cmddata_sz,
                        void *rspdata, unsigned int rspdata_sz)
@@ -119,5 +122,7 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
 
     if (rspdata)
         memcpy(rspdata, fixbuf + 8, rspdata_sz);
-    return fixbuf[0] == 0x01 ? AnError_UNSUPPORTED : AnError_SUCCESS;
+    return (fixbuf[0] == STATUS_NOPROTOERR ? AnError_SUCCESS :
+            fixbuf[0] == STATUS_UNSUPPORTEDAPICMD ? AnError_UNSUPPORTED :
+            AnError_PROTOERROR);
 }

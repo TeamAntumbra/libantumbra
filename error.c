@@ -11,6 +11,7 @@ static const char *err_strings[] = {
     [AnError_OUTOFRANGE] = "Value out of range",
     [AnError_UNSUPPORTED] = "Command unsupported",
     [AnError_CMDFAILURE] = "Command failure",
+    [AnError_PROTOERROR] = "Unspecified protocol error",
 };
 
 const char *AnError_String(AnError e)
