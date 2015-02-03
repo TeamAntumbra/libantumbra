@@ -1,5 +1,14 @@
 #include "libantumbra.h"
 
+#include <string.h>
+
+AnError AnCore_Echo_S(AnCtx *ctx, AnDevice *dev,
+                      const void *outdata, unsigned int outdata_sz,
+                      void *indata, unsigned int indata_sz)
+{
+    return AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_ECHO, outdata, outdata_sz, indata, indata_sz);
+}
+
 AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                      uint32_t api, bool *supp)
 {
@@ -14,6 +23,52 @@ AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                                  &supbyte, 1);
     if (!err)
         *supp = supbyte != 0;
+    return err;
+}
+
+AnError AnCore_Diagnostic_S(AnCtx *ctx, AnDevice *dev,
+                            void *diagdata, unsigned int diagdata_sz)
+{
+    return AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_DIAGNOSTIC, NULL, 0, diagdata, diagdata_sz);
+}
+
+#define MIN(a_, b_) ({typeof (a_) a = (a_); typeof (b_) b = (b_); (a < b) ? a : b;})
+
+AnError AnCore_ImplementationId_S(AnCtx *ctx, AnDevice *dev,
+                                  char *idstr, unsigned int idstr_sz)
+{
+    char idbuf[57];
+    AnError err = AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_IMPLEMENTATIONID,
+                                 NULL, 0, idbuf, sizeof idbuf - 1);
+    idbuf[sizeof idbuf - 1] = 0;
+    if (!err) {
+        unsigned int ncopy = MIN(strlen(idbuf) + 1, idstr_sz);
+        memcpy(idstr, idbuf, ncopy);
+        if (ncopy > 0)
+            idstr[ncopy - 1] = 0;
+    }
+    return err;
+}
+
+AnError AnCore_DeviceId_S(AnCtx *ctx, AnDevice *dev,
+                          void *idout, unsigned int idout_sz)
+{
+    return AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_DEVICEID, NULL, 0, idout, idout_sz);
+}
+
+AnError AnCore_HardwareId_S(AnCtx *ctx, AnDevice *dev,
+                            char *idstr, unsigned int idstr_sz)
+{
+    char idbuf[57];
+    AnError err = AnCmd_Invoke_S(ctx, dev, AnCore_API, AnCore_CMD_HARDWAREID,
+                                 NULL, 0, idbuf, sizeof idbuf - 1);
+    idbuf[sizeof idbuf - 1] = 0;
+    if (!err) {
+        unsigned int ncopy = MIN(strlen(idbuf) + 1, idstr_sz);
+        memcpy(idstr, idbuf, ncopy);
+        if (ncopy > 0)
+            idstr[ncopy - 1] = 0;
+    }
     return err;
 }
 

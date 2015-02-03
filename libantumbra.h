@@ -119,11 +119,41 @@ An_DLL AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev,
 
 #define AnCore_API 0x00000000
 
+#define AnCore_CMD_ECHO 0x0000
 #define AnCore_CMD_ASK 0x0001
+#define AnCore_CMD_DIAGNOSTIC 0x0002
+#define AnCore_CMD_IMPLEMENTATIONID 0x0003
+#define AnCore_CMD_DEVICEID 0x0004
 #define AnCore_CMD_RESET 0x0005
+#define AnCore_CMD_HARDWAREID 0x0006
+
+An_DLL AnError AnCore_Echo_S(AnCtx *ctx, AnDevice *dev,
+                             const void *outdata, unsigned int outdata_sz,
+                             void *indata, unsigned int indata_sz);
 
 An_DLL AnError AnCore_Ask_S(AnCtx *ctx, AnDevice *dev,
                             uint32_t api, bool *supp);
+
+An_DLL AnError AnCore_Diagnostic_S(AnCtx *ctx, AnDevice *dev,
+                                   void *diagdata, unsigned int diagdata_sz);
+
+/* Retrieve implementation ID into idout as null-terminated string. idout_sz
+   specifies the maximum number of bytes to copy into idout, including
+   terminator. The implementation ID may be up to 56 characters long, so to
+   ensure that the full ID is always obtained, pass 57 for idout_sz. Unless
+   idout_sz is 0, the copied string will always be null-terminated, even if that
+   means truncating it. */
+An_DLL AnError AnCore_ImplementationId_S(AnCtx *ctx, AnDevice *dev,
+                                         char *idstr, unsigned int idstr_sz);
+
+/* Retrieve device ID (arbitrary bytes) into idout, of length min(idout_sz,
+   56). */
+An_DLL AnError AnCore_DeviceId_S(AnCtx *ctx, AnDevice *dev,
+                                 void *idout, unsigned int idout_sz);
+
+/* As AnCore_ImplementationId_S. */
+An_DLL AnError AnCore_HardwareId_S(AnCtx *ctx, AnDevice *dev,
+                                   char *idstr, unsigned int idstr_sz);
 
 An_DLL AnError AnCore_Reset_S(AnCtx *ctx, AnDevice *dev);
 

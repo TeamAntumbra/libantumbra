@@ -74,3 +74,6 @@ Commands:
     a_temp: temperature (mK) at calibration point A
     b_sensor: raw sensor value at calibration point B
     b_temp: temperature (mK) at calibration point B
+
+  diagnostic
+    Dump 56-byte diagnostic data from device in opaque hexadecimal format.

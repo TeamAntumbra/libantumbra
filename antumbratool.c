@@ -373,6 +373,17 @@ static void cmd_tempwritecal(int argc, char **argv, AnDevice *dev)
         exit(1);
 }
 
+static void cmd_diagnostic(int argc, char **argv, AnDevice *dev)
+{
+    uint8_t diag[56];
+    char diagstr[2 * sizeof diag + 1] = {0};
+    if (AnCore_Diagnostic_S(ctx, dev, diag, sizeof diag))
+        return;
+    for (int i = 0; i < sizeof diag; ++i)
+        sprintf(diagstr + 2 * i, "%02x", (unsigned int)diag[i]);
+    printf("%s\n", diagstr);
+}
+
 #define CMD_NODEV 0
 #define CMD_LISTONLY 1
 #define CMD_USEDEV 2
@@ -403,6 +414,7 @@ static const struct cmd commands[] = {
     {"temp-readtemp", CMD_USEDEV, 0, &cmd_tempreadtemp},
     {"temp-readcal", CMD_USEDEV, 0, &cmd_tempreadcal},
     {"temp-writecal", CMD_USEDEV, 4, &cmd_tempwritecal},
+    {"diagnostic", CMD_USEDEV, 0, &cmd_diagnostic},
 };
 
 static const struct cmd *match_cmd(const char *name)
