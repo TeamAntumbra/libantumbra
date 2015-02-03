@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "libantumbra.h"
 
@@ -159,6 +160,37 @@ static FILE *try_open(const char *name, const char *mode)
     return f;
 }
 
+static void strip_unprint(char *s)
+{
+    for (int i = 0, len = strlen(s); i < len; ++i) {
+        if (!(isgraph(s[i]) || s[i] == ' '))
+            s[i] = '?';
+    }
+}
+
+static void dump_dev_info(AnDevice *dev)
+{
+    char hwid[57] = {0};
+    if (AnCore_HardwareId_S(ctx, dev, hwid, sizeof hwid))
+        return;
+    strip_unprint(hwid);
+    printf("  hwid \"%s\"\n", hwid);
+
+    char implid[57] = {0};
+    if (AnCore_ImplementationId_S(ctx, dev, implid, sizeof implid))
+        return;
+    strip_unprint(implid);
+    printf("  implid \"%s\"\n", implid);
+
+    uint8_t devid[56];
+    char devidstr[2 * sizeof devid + 1] = {0};
+    if (AnCore_DeviceId_S(ctx, dev, devid, sizeof devid))
+        return;
+    for (int i = 0; i < sizeof devid; ++i)
+        sprintf(devidstr + 2 * i, "%02x", (unsigned int)devid[i]);
+    printf("  devid %s\n", devidstr);
+}
+
 static void cmd_list(int argc, char **argv, AnDeviceInfo **devs, size_t ndevs)
 {
     for (int i = 0; i < ndevs; ++i) {
@@ -168,6 +200,11 @@ static void cmd_list(int argc, char **argv, AnDeviceInfo **devs, size_t ndevs)
         printf("%d: bus 0x%02x addr 0x%02x vid 0x%04x pid 0x%04x\n",
                i, (unsigned int)bus, (unsigned int)addr,
                (unsigned int)vid, (unsigned int)pid);
+
+        AnDevice *dev;
+        if (!AnDevice_Open(ctx, devs[i], &dev))
+            dump_dev_info(dev);
+        AnDevice_Close(ctx, dev);
     }
 }
 
