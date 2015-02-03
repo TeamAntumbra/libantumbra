@@ -80,6 +80,18 @@ AnError AnCmd_RecvRaw_S(AnCtx *ctx, AnDevice *dev, void *buf, unsigned int sz)
 #define STATUS_NOPROTOERR 0
 #define STATUS_UNSUPPORTEDAPICMD 1
 
+static const char *status_strs[] = {
+    [STATUS_NOPROTOERR] = "No protocol-level error",
+    [STATUS_UNSUPPORTEDAPICMD] = "Unsupported API or command",
+};
+static const char status_str_unknown[] = "???";
+
+static const char *lookup_status_str(uint8_t status)
+{
+    return (status < sizeof status_strs / sizeof *status_strs
+            ? status_strs[status] : status_str_unknown);
+}
+
 AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
                        const void *cmddata, unsigned int cmddata_sz,
                        void *rspdata, unsigned int rspdata_sz)
@@ -117,8 +129,8 @@ AnError AnCmd_Invoke_S(AnCtx *ctx, AnDevice *dev, uint32_t api, uint16_t cmd,
         return err;
 
     if (fixbuf[0])
-        An_LOG(ctx, AnLog_ERROR, "error status: 0x%02x",
-               (unsigned int)fixbuf[0]);
+        An_LOG(ctx, AnLog_ERROR, "error status: 0x%02x (%s)",
+               (unsigned int)fixbuf[0], lookup_status_str(fixbuf[0]));
 
     if (rspdata)
         memcpy(rspdata, fixbuf + 8, rspdata_sz);
