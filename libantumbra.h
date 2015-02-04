@@ -84,7 +84,7 @@ An_DLL void AnLog_Log(AnCtx *ctx, AnLogLevel lvl, const char *fmt, ...);
 /* Set minimum level and output file for logging, or NULL to disable. */
 An_DLL void AnLog_SetLogging(AnCtx *ctx, AnLogLevel lvl, FILE *f);
 
-/* Return a sigil (D/I/W/E) for a given error level, or ?? for unknown level. */
+/* Return a sigil (D/I/W/E) for a given error level, or ? for unknown level. */
 An_DLL const char *AnLogLevel_Sigil(AnLogLevel lvl);
 
 /* Synchronously send packet of <=64 bytes on OUT endpoint. Actual sent packet
