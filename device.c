@@ -201,6 +201,13 @@ AnError AnDevice_Open(AnCtx *ctx, AnDeviceInfo *info, AnDevice **devout)
     return part_alloc_node(ctx, info, devout);
 }
 
+AnDevice *AnDevice_OpenReturn(AnCtx *ctx, AnDeviceInfo *info, AnError *outerr)
+{
+    AnDevice *dev = NULL;
+    *outerr = AnDevice_Open(ctx, info, &dev);
+    return dev;
+}
+
 void AnDevice_Close(AnCtx *ctx, AnDevice *dev)
 {
     An_LOG(ctx, AnLog_INFO,
@@ -347,22 +354,6 @@ AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs, size_t *outndevs)
     return AnError_SUCCESS;
 }
 
-void AnDevice_FreeList(AnDeviceInfo **devs)
-{
-    for (size_t i = 0; devs[i]; ++i) {
-        libusb_unref_device(devs[i]->udev);
-        free(devs[i]);
-    }
-    free(devs);
-}
-
-AnCtx *AnCtx_InitReturn(AnError *outerr)
-{
-    AnCtx *ctx = NULL;
-    *outerr = AnCtx_Init(&ctx);
-    return ctx;
-}
-
 void *AnDevice_GetOpaqueList(AnCtx *ctx, size_t *outndevs, AnError *outerr)
 {
     AnDeviceInfo **devs = NULL;
@@ -375,14 +366,16 @@ AnDeviceInfo *AnDevice_IndexOpaqueList(void *devlist, size_t index)
     return ((AnDeviceInfo **)devlist)[index];
 }
 
+void AnDevice_FreeList(AnDeviceInfo **devs)
+{
+    for (size_t i = 0; devs[i]; ++i) {
+        libusb_unref_device(devs[i]->udev);
+        free(devs[i]);
+    }
+    free(devs);
+}
+
 void AnDevice_FreeOpaqueList(void *devlist)
 {
     AnDevice_FreeList(devlist);
-}
-
-AnDevice *AnDevice_OpenReturn(AnCtx *ctx, AnDeviceInfo *info, AnError *outerr)
-{
-    AnDevice *dev = NULL;
-    *outerr = AnDevice_Open(ctx, info, &dev);
-    return dev;
 }

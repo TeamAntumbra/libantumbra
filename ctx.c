@@ -22,6 +22,13 @@ AnError AnCtx_Init(AnCtx **ctx)
     return AnError_SUCCESS;
 }
 
+AnCtx *AnCtx_InitReturn(AnError *outerr)
+{
+    AnCtx *ctx = NULL;
+    *outerr = AnCtx_Init(&ctx);
+    return ctx;
+}
+
 void AnCtx_Deinit(AnCtx *ctx)
 {
     AnCtxDevList *cur = ctx->opendevs;
