@@ -65,6 +65,13 @@ An_DLL AnError AnDevice_GetList(AnCtx *ctx, AnDeviceInfo ***outdevs,
 
 An_DLL void AnDevice_FreeList(AnDeviceInfo **devs);
 
+/* For the benefit of FFIs that can't handle multiple levels of pointers. */
+An_DLL AnCtx *AnCtx_InitReturn(AnError *outerr);
+An_DLL void *AnDevice_GetOpaqueList(AnCtx *ctx, size_t *outndevs, AnError *outerr);
+An_DLL AnDeviceInfo *AnDevice_IndexOpaqueList(void *devlist, size_t index);
+An_DLL void AnDevice_FreeOpaqueList(void *devlist);
+An_DLL AnDevice *AnDevice_OpenReturn(AnCtx *ctx, AnDeviceInfo *info, AnError *outerr);
+
 #define AnLog_NONE (-1)
 #define AnLog_ERROR 0
 #define AnLog_WARN 1

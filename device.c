@@ -355,3 +355,34 @@ void AnDevice_FreeList(AnDeviceInfo **devs)
     }
     free(devs);
 }
+
+AnCtx *AnCtx_InitReturn(AnError *outerr)
+{
+    AnCtx *ctx = NULL;
+    *outerr = AnCtx_Init(&ctx);
+    return ctx;
+}
+
+void *AnDevice_GetOpaqueList(AnCtx *ctx, size_t *outndevs, AnError *outerr)
+{
+    AnDeviceInfo **devs = NULL;
+    *outerr = AnDevice_GetList(ctx, &devs, outndevs);
+    return devs;
+}
+
+AnDeviceInfo *AnDevice_IndexOpaqueList(void *devlist, size_t index)
+{
+    return ((AnDeviceInfo **)devlist)[index];
+}
+
+void AnDevice_FreeOpaqueList(void *devlist)
+{
+    AnDevice_FreeList(devlist);
+}
+
+AnDevice *AnDevice_OpenReturn(AnCtx *ctx, AnDeviceInfo *info, AnError *outerr)
+{
+    AnDevice *dev = NULL;
+    *outerr = AnDevice_Open(ctx, info, &dev);
+    return dev;
+}
