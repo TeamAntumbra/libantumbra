@@ -75,3 +75,8 @@ included in the framework.
 =Frameworks/= bundle subdir. If it isn't, you must change either the install
 name of =libantumbra.framework/libantumbra= or your binary's dependency
 reference.
+
+** Linux
+
+We link against system libusb using flags provided by ~pkg-config~. The
+~libusb/~ directory is not used.
