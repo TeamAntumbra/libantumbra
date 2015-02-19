@@ -43,10 +43,10 @@ default Homebrew install):
 : $ cp /usr/local/lib/libusb-1.0.0.dylib libusb/libusb.dylib
 : $ cp /usr/local/include/libusb-1.0/libusb.h libusb/libusb.h
 
-Dynamic linking is unusual on Darwin in that the target library specifies its
-own path ("install name"), which is then stored at build time in the binary that
-uses it. Some voodoo must be done in order for runtime library resolution to
-work properly. See the Makefile if you're interested.
+The target library specifies its own path ("install name"), which is then stored
+at build time in the binary that references it. Some voodoo must be done in
+order for runtime library resolution to work properly. See the Makefile if
+you're interested.
 
 *** libantumbra.framework
 
