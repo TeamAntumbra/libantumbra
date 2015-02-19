@@ -19,6 +19,15 @@ Windows binary distribution (libusb-1.0.19.7z), which looks like this...
 : libusb-1.0.dll
 : libusb-1.0.dll.a
 
+Building via MinGW on Cygwin should also work. Building with Microsoft
+toolchains is completely unsupported and probably impossible.
+
+A fully functional libantumbra build consists of:
+
+- ~libantumbra.dll~
+- ~libusb-1.0.dll~ (from ~libusb/~)
+- ~antumbratool.exe~
+
 ** Darwin
 
 libantumbra can be linked against either the system libusb (such as might be
