@@ -4,6 +4,6 @@
 .DS_Store
 /libusb/
 *.exe
-*.dll
+/*.dll
 /antumbratool
 /usage.c
