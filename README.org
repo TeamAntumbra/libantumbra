@@ -80,3 +80,17 @@ reference.
 
 We link against system libusb using flags provided by ~pkg-config~. The
 ~libusb/~ directory is not used.
+
+* OS requirements
+
+** Linux
+
+No drivers are required. However, for non-root users to access Glow devices,
+they must have read and write permissions on the associated USB device node
+(~/dev/bus/usb/...~).
+
+See ~glow-udev.rules~ for one possible setup. This file can be placed in
+~/etc/udev/rules.d~. If udev does not automatically load the new rules, all
+rules can be manually reloaded by ~udevadm control --reload~. It may be
+necessary to unplug and reconnect all Glow devices before the new configuration
+takes effect.
