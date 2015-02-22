@@ -32,7 +32,7 @@ A fully functional libantumbra build consists of:
 :   libwdi.dll
 :   msvcr120.dll
 
-** Darwin
+** Darwin / OS X
 
 libantumbra can be linked against either the system libusb (such as might be
 installed with MacPorts, Homebrew, etc) or a custom copy. Only the latter
@@ -95,6 +95,11 @@ file) for a given device before it can be used, otherwise all I/O will fail.
 
 ~glowdrvinst.exe~ installs the WinUSB driver for Glow devices. *Driver
 installation requires that at least one device be plugged in.*
+
+** Darwin / OS X
+
+No drivers are required. Ordinary users should be able to access Glow devices
+out of the box.
 
 ** Linux
 
