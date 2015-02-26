@@ -87,34 +87,27 @@ else ifeq ($(os),darwin)
 CC = gcc
 AR = ar
 LD = gcc
-CFLAGS += -Ilibusb -mmacosx-version-min=10.7
+CFLAGS += -Ideps/osx-libusb -mmacosx-version-min=10.7
 LDFLAGS += -mmacosx-version-min=10.7
 
-rm_files += antumbratool *.dylib *.framework *.zip libusb/libusb-special.dylib
+rm_files += antumbratool *.dylib *.framework *.zip
 
 %.dylib:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 antumbratool:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: libantumbra.dylib antumbratool libantumbra.framework libantumbra.framework.zip
+all: libantumbra.dylib antumbratool libantumbra.framework
 
 libantumbra.dylib: LDFLAGS += -dynamiclib
-libantumbra.dylib: LDLIBS += -Llibusb -lusb-special
-libantumbra.dylib: $(objs) libusb/libusb-special.dylib
+libantumbra.dylib: LDLIBS += -L. -lusb-special
+libantumbra.dylib: $(objs) libusb-special.dylib
 	$(CC) $(LDFLAGS) -o $@ $(objs) $(LDLIBS)
-
-# Standard libusb from external source (Homebrew, ...). This copy is not
-# modified, but it must be present so that a modified version can be created. A
-# symlink is acceptable.
-libusb/libusb.dylib:
-	@>&2 echo "$@ must be added manually! See README."
-	@exit 1
 
 # libusb with modified install name. The standard libusb could potentially have
 # any install name, which would make changing libantumbra.dylib's libusb
 # dependency path difficult.
-libusb/libusb-special.dylib: libusb/libusb.dylib
+libusb-special.dylib: deps/osx-libusb/libusb.dylib
 	cp $< $@
 	chmod u+w $@
 	install_name_tool -id libusb-DUMMY-NAME $@
@@ -122,7 +115,7 @@ libusb/libusb-special.dylib: libusb/libusb.dylib
 antumbratool: LDLIBS += -lm -L. -lantumbra
 antumbratool: antumbratool.o hsv.o usage.o
 
-libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib antumbratool
+libantumbra.framework: libantumbra.dylib libusb-special.dylib antumbratool
 	mkdir $@ $@/Headers $@/Resources
 
 	cp libantumbra.dylib $@/libantumbra
@@ -131,7 +124,7 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib antumbratoo
 		-id @loader_path/../Frameworks/libantumbra.framework/libantumbra \
 		$@/libantumbra
 
-	cp libusb/libusb-special.dylib $@/libusb.dylib
+	cp libusb-special.dylib $@/libusb.dylib
 # The install name doesn't actually matter unless someone tries to build against
 # this, but it's best not to leave dummy names lying around. Someone might step
 # on them.
@@ -142,8 +135,6 @@ libantumbra.framework: libantumbra.dylib libusb/libusb-special.dylib antumbratoo
 
 	cp libantumbra.h $@/Headers/libantumbra.h
 	cp Info.plist $@/Resources/Info.plist
-libantumbra.framework.zip: libantumbra.framework
-	zip -r $@ $<
 
 else
 
