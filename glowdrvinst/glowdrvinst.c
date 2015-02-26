@@ -114,8 +114,10 @@ int main(int argc, char **argv)
     }
 
     if (!didinstall)
-        fputs("No Glow devices are connected, or all connected devices are already installed.\n"
-              "Driver installation is not required.\n", stdout);
+        fputs("Did not install driver.\n"
+              "Either no Glow devices are connected, or all connected devices are already installed.\n"
+              "Note that driver installation requires at least one device to be connected.\n",
+              stdout);
 
     wdi_destroy_list(list);
     die(0);
