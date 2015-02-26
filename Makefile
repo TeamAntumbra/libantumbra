@@ -49,7 +49,7 @@ libantumbra.dll: LDLIBS += -Ldeps/win32-libusb -lusb-1.0
 libantumbra.dll: $(objs)
 
 antumbratool.exe: LDLIBS += -lm -L. -lantumbra
-antumbratool.exe: antumbratool.o hsv.o usage.o
+antumbratool.exe: antumbratool.o usage.o
 
 glowdrvinst.exe: CFLAGS += -Ideps/libwdi
 glowdrvinst.exe: LDFLAGS += -Wl,--enable-stdcall-fixup,--allow-multiple-definition
@@ -80,7 +80,7 @@ libantumbra.so: LDLIBS += $(shell pkg-config libusb-1.0 --libs)
 libantumbra.so: $(objs)
 
 antumbratool: LDLIBS += -lm $(shell pkg-config libusb-1.0 --libs) -L. -lantumbra
-antumbratool: antumbratool.o hsv.o usage.o
+antumbratool: antumbratool.o usage.o
 
 else ifeq ($(os),darwin)
 
@@ -113,7 +113,7 @@ libusb-special.dylib: deps/osx-libusb/libusb.dylib
 	install_name_tool -id libusb-DUMMY-NAME $@
 
 antumbratool: LDLIBS += -lm -L. -lantumbra
-antumbratool: antumbratool.o hsv.o usage.o
+antumbratool: antumbratool.o usage.o
 
 libantumbra.framework: libantumbra.dylib libusb-special.dylib antumbratool
 	mkdir $@ $@/Headers $@/Resources

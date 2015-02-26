@@ -10,8 +10,6 @@
 #include <ctype.h>
 
 #include "libantumbra.h"
-
-#include "hsv.h"
 #include "usage.h"
 
 static AnCtx *ctx;
