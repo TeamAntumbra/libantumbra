@@ -36,12 +36,12 @@ AR = i686-w64-mingw32-ar
 LD = i686-w64-mingw32-gcc
 CFLAGS += -Ideps/win32-libusb
 
-rm_files += *.exe *.dll glowdrvinst/glowdrvinst.exe glowdrvinst/glowdrvinst.o
+rm_files += *.exe *.dll
 
 %.dll %.exe:
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: libantumbra.dll antumbratool.exe glowdrvinst/glowdrvinst.exe
+all: libantumbra.dll antumbratool.exe glowdrvinst.exe
 
 $(objs): CFLAGS += -DANTUMBRA_WIN_DLLBUILD
 libantumbra.dll: LDFLAGS += -shared -Wl,--out-implib=$@.a
@@ -51,10 +51,10 @@ libantumbra.dll: $(objs)
 antumbratool.exe: LDLIBS += -lm -L. -lantumbra
 antumbratool.exe: antumbratool.o hsv.o usage.o
 
-glowdrvinst/glowdrvinst.exe: CFLAGS += -Iglowdrvinst
-glowdrvinst/glowdrvinst.exe: LDFLAGS += -Wl,--enable-stdcall-fixup,--allow-multiple-definition
-glowdrvinst/glowdrvinst.exe: LDLIBS += -Lglowdrvinst -lwdi
-glowdrvinst/glowdrvinst.exe: glowdrvinst/glowdrvinst.o
+glowdrvinst.exe: CFLAGS += -Ideps/libwdi
+glowdrvinst.exe: LDFLAGS += -Wl,--enable-stdcall-fixup,--allow-multiple-definition
+glowdrvinst.exe: LDLIBS += -Ldeps/libwdi -lwdi
+glowdrvinst.exe: glowdrvinst.o
 
 else ifeq ($(os),linux)
 
