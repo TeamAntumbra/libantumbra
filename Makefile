@@ -34,7 +34,7 @@ ifeq ($(os),win32)
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
 LD = i686-w64-mingw32-gcc
-CFLAGS += -Ilibusb
+CFLAGS += -Ideps/win32-libusb
 
 rm_files += *.exe *.dll glowdrvinst/glowdrvinst.exe glowdrvinst/glowdrvinst.o
 
@@ -45,7 +45,7 @@ all: libantumbra.dll antumbratool.exe glowdrvinst/glowdrvinst.exe
 
 $(objs): CFLAGS += -DANTUMBRA_WIN_DLLBUILD
 libantumbra.dll: LDFLAGS += -shared -Wl,--out-implib=$@.a
-libantumbra.dll: LDLIBS += -Llibusb -lusb-1.0
+libantumbra.dll: LDLIBS += -Ldeps/win32-libusb -lusb-1.0
 libantumbra.dll: $(objs)
 
 antumbratool.exe: LDLIBS += -lm -L. -lantumbra
