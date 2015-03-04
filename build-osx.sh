@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 rm -rf stage-osx
 mkdir stage-osx
 make os=darwin

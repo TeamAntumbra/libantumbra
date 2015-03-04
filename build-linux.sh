@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 rm -rf stage-linux
 mkdir stage-linux
 make os=linux
