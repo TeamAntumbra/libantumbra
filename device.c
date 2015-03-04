@@ -289,7 +289,6 @@ static AnError populate_info(AnCtx *ctx, AnDeviceInfo *info,
 static bool match_vid_pid(uint16_t vid, uint16_t pid)
 {
     static const struct {uint16_t vid; uint16_t pid;} ids[] = {
-        {0x03eb, 0x2040},
         {0x16d0, 0x0a85},
     };
     for (int i = 0; i < sizeof ids / sizeof *ids; ++i) {
