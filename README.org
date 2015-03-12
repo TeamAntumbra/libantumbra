@@ -2,25 +2,13 @@
 
 * Building
 
+Binary dependencies are obtained from the ~deps/~ submodule as necessary.
+
 ** Windows
 
-Building for Windows via MinGW on Linux requires libusb static library and
-header to be present under =libusb/= in the source tree. Given the libusb 1.0.19
-Windows binary distribution (libusb-1.0.19.7z), which looks like this...
-
-: include/libusb-1.0/libusb.h
-: MinGW32/dll/libusb-1.0.dll
-: MinGW32/dll/libusb-1.0.dll.a
-: [other things we don't care about]
-
-...the =libusb/= directory here must look like this:
-
-: libusb.h
-: libusb-1.0.dll
-: libusb-1.0.dll.a
-
-Building via MinGW on Cygwin should also work. Building with Microsoft
-toolchains is completely unsupported and probably impossible.
+Only the MinGW-w64 toolchain is supported. (Despite its name, it can build for
+both 32-bit and 64-bit Windows.) Building with Microsoft toolchains is
+completely unsupported and probably impossible.
 
 A fully functional libantumbra build consists of:
 
@@ -35,17 +23,8 @@ A fully functional libantumbra build consists of:
 ** Darwin / OS X
 
 libantumbra can be linked against either the system libusb (such as might be
-installed with MacPorts, Homebrew, etc) or a custom copy. Only the latter
+installed with MacPorts, Homebrew, etc) or a copy from ~deps/~. Only the latter
 approach is supported as it is the most portable.
-
-*** Including libusb
-
-Place libusb dynamic library and headers in =libusb/= (this example uses a
-default Homebrew install):
-
-: $ mkdir libusb
-: $ cp /usr/local/lib/libusb-1.0.0.dylib libusb/libusb.dylib
-: $ cp /usr/local/include/libusb-1.0/libusb.h libusb/libusb.h
 
 The target library specifies its own path ("install name"), which is then stored
 at build time in the binary that references it. Some voodoo must be done in
@@ -82,8 +61,8 @@ reference.
 
 ** Linux
 
-We link against system libusb using flags provided by ~pkg-config~. The
-~libusb/~ directory is not used.
+We link against system libusb using flags provided by ~pkg-config~. No binary
+dependencies are pulled in from ~deps/~.
 
 * OS requirements
 
@@ -93,8 +72,9 @@ No drivers are required. libusb can access USB devices using the built-in WinUSB
 API. However, the WinUSB driver must be "installed" (i.e. registered via INF
 file) for a given device before it can be used, otherwise all I/O will fail.
 
-~glowdrvinst.exe~ installs the WinUSB driver for Glow devices. *Driver
-installation requires that at least one device be plugged in.*
+~glowdrvinst.exe~ installs the WinUSB driver for Glow devices. If run multiple
+times, it will install multiple instances of the driver (redundant but
+harmless).
 
 ** Darwin / OS X
 
