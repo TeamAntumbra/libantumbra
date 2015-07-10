@@ -91,4 +91,7 @@ See ~glow-udev.rules~ for one possible setup. This file can be placed in
 ~/etc/udev/rules.d~. If udev does not automatically load the new rules, all
 rules can be manually reloaded by ~udevadm control --reload~. It may be
 necessary to unplug and reconnect all Glow devices before the new configuration
-takes effect.
+takes effect. Members of the ~usb~ group will have read/write access to Glow
+devices. To add a user to the ~usb~ group, run ~gpasswd -a <username> usb~. If
+the ~usb~ group does not already exist, it must be created first (~groupadd -r
+usb~).
