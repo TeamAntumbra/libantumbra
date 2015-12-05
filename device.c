@@ -105,15 +105,8 @@ static AnError part_open_device(AnCtx *ctx, AnDeviceInfo *info,
 
 static AnError part_configure_device(AnCtx *ctx, AnDevice *dev)
 {
-    An_LOG(ctx, AnLog_DEBUG, "set configuration -1 to reset state");
-    int err = libusb_set_configuration(dev->udevh, -1);
-    if (err)
-        An_LOG(ctx, AnLog_DEBUG,
-               "libusb_set_configuration(-1) failed (not fatal): %s",
-               libusb_strerror(err));
-
     An_LOG(ctx, AnLog_DEBUG, "set configuration 1");
-    err = libusb_set_configuration(dev->udevh, 1);
+    int err = libusb_set_configuration(dev->udevh, 1);
     if (err) {
         An_LOG(ctx, AnLog_ERROR, "libusb_set_configuration(1): %s",
                libusb_strerror(err));
